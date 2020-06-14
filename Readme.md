@@ -7,6 +7,8 @@ Loading hr_toolbox.py with IDA (alt-f7) will make
 available the "find_expr()" and "find_item()" functions
 to the IDAPython CLI and the script interpreter (shift-f2).
 
+![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
+
 The functions find_expr() and find_item() accept two arguments:
 ```
     find_item(ea, insn)
