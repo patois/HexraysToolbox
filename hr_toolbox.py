@@ -13,8 +13,8 @@ processor architecture is supported by the Hexrays decompiler
 
 HRDevHelper (https://github.com/patois/HRDevHelper) is a separate IDAPython
 plugin for IDA Pro that visualizes the AST of decompiled code. Its use is
-encouraged in combination with Hexrays Toolbox in order to come up with
-useful queries.
+encouraged in combination with Hexrays Toolbox, in order to simplify the
+development of queries.
 
 Use Cases:
 ----------
@@ -29,7 +29,8 @@ Use Cases:
 
 Example scenarios:
 ------------------
-Load and run the accompanied script 'example_queries.py' with IDA (Shift-F2) 
+Load and run one of the accompanied scripts, such as 'example_queries.py'
+with IDA (Shift-F2).
 
 Todo:
 -----
@@ -39,7 +40,18 @@ Todo:
 
 # ----------------------------------------------------------------------------
 def find_item(ea, item, findall=True, parents=False):
-    """find item within AST of decompiled function"""
+    """find item within AST of decompiled function
+
+    arguments:
+    ea:         address belonging to a function
+    item:       lambda/function: f(cfunc_t, citem_t) returning a bool
+    findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+                True  -> find citem_t elements, which includes cexpr_t and cinsn_t
+    parents:    False -> discard cexpr_t parent nodes
+                True  -> maintain citem_t parent nodes
+
+    returns list of citem_t items
+    """
 
     class citem_finder_t(hr.ctree_visitor_t):
         def __init__(self, cfunc, i, parents):
@@ -53,6 +65,8 @@ def find_item(ea, item, findall=True, parents=False):
             return
 
         def process(self, i):
+            """process cinsn_t and cexpr_t elements alike"""
+
             cfunc = self.cfunc
             if self.item(cfunc, i):
                 self.found.append(i)
@@ -80,7 +94,18 @@ def find_item(ea, item, findall=True, parents=False):
 
 # ----------------------------------------------------------------------------
 def find_expr(ea, expr, findall=True, parents=False):
-    """find expression within AST of decompiled function"""
+    """find expression within AST of decompiled function
+    
+    arguments:
+    ea:         address belonging to a function
+    expr:       lambda/function: f(cfunc_t, citem_t) returning a bool
+    findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+                True  -> find citem_t elements, which includes cexpr_t and cinsn_t
+    parents:    False -> discard cexpr_t parent nodes
+                True  -> maintain citem_t parent nodes
+
+    returns list of cexpr_t items
+    """
 
     class expr_finder_t(hr.ctree_visitor_t):
         def __init__(self, cfunc, expr, parents):
@@ -94,6 +119,8 @@ def find_expr(ea, expr, findall=True, parents=False):
             return
 
         def visit_expr(self, e):
+            """process cexpr_t elements"""
+
             cfunc = self.cfunc
             if self.expr(cfunc, e):
                 self.found.append(e)
@@ -120,7 +147,7 @@ def exec_query(q, ea_list, full):
     convenience wrapper function around find_item()
 
     arguments:
-    q:          python expression
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
@@ -142,7 +169,7 @@ def query_db(q,
     """run query on idb, print results
     
     arguments:
-    q:          python expression
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     fmt:        lambda/callback-function to be called for formatting output
@@ -159,7 +186,7 @@ def query(q,
     """run query on list of addresses, print results
 
     arguments:
-    q:          python expression
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
@@ -206,7 +233,7 @@ def display_argstr(f, idx):
     """
 
     try:
-        display(f, lambda x:"%x: %s" % (x.ea,
+        display(f, fmt=lambda x:"%x: %s" % (x.ea,
             ida_bytes.get_strlit_contents(x.a[idx].obj_ea, -1, 0,
                 ida_bytes.STRCONV_ESCAPE).decode("utf-8")))
     except Exception as exc:
