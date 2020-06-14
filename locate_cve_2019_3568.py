@@ -13,8 +13,8 @@ def locate_CVE_2019_3568():
             e.cif.expr.y.y.op is cot_num and
             e.cif.expr.y.y.numval() == 51200)
 
-    ea_list=CodeRefsTo(get_name_ea(BADADDR, "__aeabi_memcpy"), False)
-    return query(expr, set(ea_list), full=True)
+    locations=set(CodeRefsTo(get_name_ea(BADADDR, "__aeabi_memcpy"), False))
+    return query(expr, locations, full=True)
 
 if __name__ == "__main__":
     print("Attempting to locate CVE-2019-3568...")
