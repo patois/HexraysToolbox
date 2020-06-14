@@ -12,9 +12,9 @@ The functions find_expr() and find_item() accept two arguments:
     find_item(ea, insn)
     find_expr(ea, expr)
 
-    ea:   address of a valid function within
-          the current database
-    expr: lambda function
+    ea:         address of a valid function within
+                the current database
+    insn/expr:  lambda function
 
           insn/expr are lambda functions that are passed two arguments.
              1. cfunc: cfunc_t
