@@ -15,18 +15,19 @@ The functions find_expr() and find_item() accept two arguments:
     ea:         address of a valid function within
                 the current database
     insn/expr:  lambda function
+                insn/expr are lambda functions that each are passed two arguments:
+                1. cfunc: cfunc_t
+                2. i/e:   cinsn_t/cexpr_t
 
-          insn/expr are lambda functions that are passed two arguments.
-             1. cfunc: cfunc_t
-             2. i/e:   cinsn_t/cexpr_t
+    Example:
+    find_expr(here(), lambda cf, e: e.op is cot_call)
+    
+    -> finds and returns all function calls within a current function
 
-          Find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
-          within hexrays.hpp for help and further details.
+    Please find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
+    within hexrays.hpp for help and further details.
 ```
 Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin which may assist in writing respective queries.
-
-A simple example which finds and returns all function calls within
-a current function: ```find_expr(here(), lambda cf, e: e.op is cot_call)```
 
 ## Examples:
 
