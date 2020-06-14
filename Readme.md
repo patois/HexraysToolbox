@@ -9,19 +9,19 @@ to the IDAPython CLI and the script interpreter (shift-f2).
 
 The functions find_expr() and find_item() accept two arguments:
 ```
-    find_item(ea, expr)
+    find_item(ea, insn)
     find_expr(ea, expr)
 
     ea:   address of a valid function within
           the current database
     expr: lambda function
 
-          "expr" is a lambda function that is passed two arguments.
+          insn/expr are lambda functions that are passed two arguments.
              1. cfunc: cfunc_t
-             2. e:     cexpr_t
+             2. i/e:   cinsn_t/cexpr_t
 
-          Find the "cfunc_t" and "cexpr_t" structures within hexrays.hpp
-          for help and further details.
+          Find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
+          within hexrays.hpp for help and further details.
 ```
 Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin which may assist in writing respective queries.
 
