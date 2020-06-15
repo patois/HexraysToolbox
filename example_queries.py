@@ -104,6 +104,7 @@ def menu():
     q(lambda cf, e: e.op is cot_call, [here()], lambda e: "%s" % get_name(e.x.obj_ea)[::-1])
     q(lambda cf, e: e.op is cit_if and e.cif.expr.op is cot_land)
 
+    lst(lambda cf, e: e.op is cot_call and e.x.op is cot_obj and get_name(e.x.obj_ea) == "strcat", Functions())
     """)
     return
 
@@ -112,4 +113,5 @@ if __name__ == "__main__":
     from hr_toolbox import display_argstr as da
     from hr_toolbox import query as q
     from hr_toolbox import query_db as qdb
+    from hr_toolbox import ic_t as lst
     menu()

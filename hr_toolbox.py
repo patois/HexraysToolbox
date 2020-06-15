@@ -36,6 +36,7 @@ Todo:
 -----
 - data flow analysis
 - this should be optimized for speed and rewritten in C/C++ :)
+- explicit support for cinsn_t?
 """
 
 # ----------------------------------------------------------------------------
@@ -243,7 +244,7 @@ def display_argstr(f, idx):
 
 # ----------------------------------------------------------------------------
 class ic_t(ida_kernwin.Choose):
-    """Choser for citem_t types
+    """Chooser for citem_t types
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
@@ -255,11 +256,12 @@ class ic_t(ida_kernwin.Choose):
 
     def __init__(self, q, ea_list=None, full=False,
             fmt=lambda x:"%x: %s" % (x.ea, ida_lines.tag_remove(x.print1(None))),
-            flags=0, width=None, height=None, embedded=False, modal=False):
+            flags=ida_kernwin.CH_RESTORE | ida_kernwin.CH_QFLT,
+            width=None, height=None, embedded=False, modal=False):
         ida_kernwin.Choose.__init__(
             self,
             "Hexrays Toolbox",
-            [ ["List of results", 20]],
+            [ ["List of results", 60]],
             flags = flags,
             width = width,
             height = height,
