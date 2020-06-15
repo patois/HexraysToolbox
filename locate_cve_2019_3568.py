@@ -3,8 +3,7 @@ from hr_toolbox import query
 
 def locate_CVE_2019_3568():
     """Example query:
-    One (but not very elegant) way of locating CVE-2019-3568 within libwhatsapp.so.
-    Should 
+    One (but not very elegant) way of locating CVE-2019-3568 within libwhatsapp.so. 
 
     """
     expr = lambda cf, e: (e.op is cit_if and

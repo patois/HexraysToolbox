@@ -13,7 +13,7 @@ def find_calls():
     query = lambda cf, e: (e.op is cot_call and
         e.x.op is cot_obj)
 
-    return tb.db_exec_query(query)
+    return tb.query_db(query)
 
 # ----------------------------------------------------------------------------
 def find_memcpy():
@@ -29,7 +29,7 @@ def find_memcpy():
         e.a[2].op is cot_var and
         cf.lvars[e.a[2].v.idx].tif.is_signed())
 
-    return tb.db_exec_query(query)
+    return tb.query_db(query)
 
 # ----------------------------------------------------------------------------
 def find_sprintf():
@@ -37,16 +37,37 @@ def find_sprintf():
     example function to be passed to hr_toolbox.display()
 
     """
+    func_name = 'sprintf'
 
     query = lambda cfunc, e: (e.op is cot_call and
         e.x.op is cot_obj and
-        'sprintf' in get_name(e.x.obj_ea) and
+        func_name in get_name(e.x.obj_ea) and
         len(e.a) >= 2 and
         e.a[1].op is cot_obj and
         is_strlit(get_flags(e.a[1].obj_ea)) and
         b'%s' in get_strlit_contents(e.a[1].obj_ea, -1, 0, STRCONV_ESCAPE))
 
-    return tb.db_exec_query(query)
+    ea_malloc = get_name_ea_simple(func_name)
+    ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
+    return tb.exec_query(query, ea_set, False)
+
+# ----------------------------------------------------------------------------
+def find_malloc():
+    """calls to malloc() with a size argument that is anything
+    but a variable or an immediate number.
+
+    """
+    func_name = 'malloc'
+
+    query = lambda cf, e: (e.op is cot_call and 
+        e.x.op is cot_obj and
+        get_name(e.x.obj_ea) == func_name and
+        len(e.a) == 1 and
+        e.a[0].op not in [cot_num, cot_var])
+
+    ea_malloc = get_name_ea_simple(func_name)
+    ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
+    return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def find_gpa():
@@ -54,17 +75,18 @@ def find_gpa():
     example function to be passed to hr_toolbox.display()
 
     """
+    func_name = 'GetProcAddress'
 
     query = lambda cfunc, e: (e.op is cot_call and
         e.x.op is cot_obj and
-        'GetProcAddress' in get_name(e.x.obj_ea) and
+        get_name(e.x.obj_ea) == func_name and
         len(e.a) == 2 and
         e.a[1].op is cot_obj and
         is_strlit(get_flags(e.a[1].obj_ea)))
 
-    gpa = get_name_ea_simple('GetProcAddress')
-    ea_list = [f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f]
-    return tb.exec_query(query, list(dict.fromkeys(ea_list)))
+    gpa = get_name_ea_simple(func_name)
+    ea_set = ([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
+    return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def menu():
@@ -72,12 +94,13 @@ def menu():
 
     menu()
 
-    d(find_calls) # print function calls
-    d(find_memcpy) # print calls to memcpy() with signed 'n' argument
-    d(find_sprintf) # print calls to sprintf() with "%s" in fmt str
-    da(find_gpa, 1) # print calls to GetProcAddress + imported func name
+    d(find_calls)
+    d(find_memcpy)
+    d(find_sprintf)
+    d(find_malloc)
+    da(find_gpa, 1)
 
-    qdb(lambda cf, e: e.op is cot_call) # find function calls
+    qdb(lambda cf, e: e.op is cot_call)
     q(lambda cf, e: e.op is cot_call, [here()], lambda e: "%s" % get_name(e.x.obj_ea)[::-1])
     q(lambda cf, e: e.op is cit_if and e.cif.expr.op is cot_land)
 

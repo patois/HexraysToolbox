@@ -201,8 +201,8 @@ def query(q,
     try:
         for e in r:
             print(fmt(e))
-    except:
-        print("<query> error!")
+    except Exception as exc:
+        print("<query> error:", exc)
     return
 
 # ----------------------------------------------------------------------------
@@ -215,12 +215,13 @@ def display(f,
     f:      function that is expected to return a list of citem_t/cexpr_t objects
     fmt:    lambda/callback-function to be called for formatting output
     """
-
     try:
-        for e in f():
+        r = f()
+        print("<display> done! %d unique hits." % len(r))
+        for e in res:
             print(fmt(e))
     except Exception as exc:
-        print("<display> error!:", exc)
+        print("<display> error:", exc)
     return
 
 # ----------------------------------------------------------------------------
@@ -237,5 +238,59 @@ def display_argstr(f, idx):
             ida_bytes.get_strlit_contents(x.a[idx].obj_ea, -1, 0,
                 ida_bytes.STRCONV_ESCAPE).decode("utf-8")))
     except Exception as exc:
-        print("<display_argstr> error!:", exc)
+        print("<display_argstr> error:", exc)
     return
+
+# ----------------------------------------------------------------------------
+class ic_t(ida_kernwin.Choose):
+    """Choser for citem_t types
+
+    arguments:
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+    ea_list:    iterable of addresses/functions to process
+    full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+                True  -> find citem_t elements, which includes cexpr_t and cinsn_t
+    fmt:        lambda/callback-function to be called for formatting output
+    """
+
+    def __init__(self, q, ea_list=None, full=False,
+            fmt=lambda x:"%x: %s" % (x.ea, ida_lines.tag_remove(x.print1(None))),
+            flags=0, width=None, height=None, embedded=False, modal=False):
+        ida_kernwin.Choose.__init__(
+            self,
+            "Hexrays Toolbox",
+            [ ["List of results", 20]],
+            flags = flags,
+            width = width,
+            height = height,
+            embedded = embedded)
+
+        if ea_list is None:
+            ea_list =[ida_kernwin.get_screen_ea()]
+        self.items = exec_query(q, ea_list, full)
+        self.fmt = fmt
+        self.Show()
+
+    def OnClose(self):
+        self.items = []
+
+    def OnSelectLine(self, n):
+        ida_kernwin.jumpto(self.items[n].ea)
+
+    def OnGetLine(self, n):
+        return self._make_choser_entry(n)
+
+    def OnGetSize(self):
+        return len(self.items)
+
+    def append(self, data):
+        self.items.append(data)
+        self.Refresh()
+        return
+
+    def set_data(self, data):
+        self.items = data
+        self.Refresh()
+
+    def _make_choser_entry(self, n):
+        return [self.fmt(self.items[n])]
