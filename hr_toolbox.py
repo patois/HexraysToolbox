@@ -68,8 +68,7 @@ def find_item(ea, item, findall=True, parents=False):
         def process(self, i):
             """process cinsn_t and cexpr_t elements alike"""
 
-            cfunc = self.cfunc
-            if self.item(cfunc, i):
+            if self.item(self.cfunc, i):
                 self.found.append(i)
                 if not self.findall:
                     return 1
@@ -122,9 +121,9 @@ def find_expr(ea, expr, findall=True, parents=False):
         def visit_expr(self, e):
             """process cexpr_t elements"""
 
-            cfunc = self.cfunc
-            if self.expr(cfunc, e):
+            if self.expr(self.cfunc, e):
                 self.found.append(e)
+                #print("dbg %x" % e.ea)
                 if not self.findall:
                     return 1
             return 0
