@@ -16,7 +16,7 @@ def fc(func_name, fuzzy=False):
             name in get_name(e.x.obj_ea).lower())
         
         # we're not looking for cit_... items in this query - set no_cit flag
-        return tb.exec_query(query, Functions(), no_cit=True)
+        return tb.exec_query(query, Functions(), True)
 
     # else...
     ea = get_name_ea(BADADDR, func_name)
@@ -26,7 +26,7 @@ def fc(func_name, fuzzy=False):
             get_name(e.x.obj_ea) == func_name)
 
         # we're not looking for cit_... items in this query - set no_cit flag
-        return tb.exec_query(query, ea_list=list(set(CodeRefsTo(ea, True))), no_cit=True)
+        return tb.exec_query(query, list(set(CodeRefsTo(ea, True))), True)
     
     return list()
 
@@ -45,7 +45,7 @@ def find_memcpy():
         cf.lvars[e.a[2].v.idx].tif.is_signed())
 
     # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_list=Functions(), no_cit=True)
+    return tb.exec_query(query, Functions(), True)
 
 # ----------------------------------------------------------------------------
 def find_sprintf():
@@ -66,7 +66,7 @@ def find_sprintf():
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
     # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, no_cit=True)
+    return tb.exec_query(query, ea_set, True)
 
 # ----------------------------------------------------------------------------
 def find_malloc():
@@ -86,7 +86,7 @@ def find_malloc():
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
     # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, no_cit=True)
+    return tb.exec_query(query, ea_set, True)
 
 # ----------------------------------------------------------------------------
 def find_gpa():
@@ -107,7 +107,7 @@ def find_gpa():
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
     
     # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, no_cit=True)
+    return tb.exec_query(query, ea_set, True)
 
 # ----------------------------------------------------------------------------
 def menu():

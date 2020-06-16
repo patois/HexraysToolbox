@@ -176,12 +176,14 @@ def query_db(q, no_cit=False):
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     no_cit:      False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
+
+    returns list of tb_result_t objects
     """
 
     return query(q, ea_list=idautils.Functions(), no_cit=no_cit)
 
 # ----------------------------------------------------------------------------
-def query(q, ea_list=None, no_cit=False):
+def query(q, ea_list=None, no_cit=False, do_print=False):
     """run query on list of addresses, print results
 
     arguments:
@@ -189,19 +191,22 @@ def query(q, ea_list=None, no_cit=False):
     ea_list:    iterable of addresses/functions to process
     no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
+
+    returns list of tb_result_t objects
     """
 
     if not ea_list:
         ea_list = [ida_kernwin.get_screen_ea()]
 
-    r = exec_query(q, ea_list=ea_list, no_cit=no_cit)
-    print("<query> done! %d unique hits." % len(r))
     try:
-        for e in r:
-            print("%x: %s" % (e.ea, e.v))
+        r = exec_query(q, ea_list, no_cit)
+        if do_print:
+            print("<query> done! %d unique hits." % len(r))
+            for e in r:
+                print("%x: %s" % (e.ea, e.v))
     except Exception as exc:
         print("<query> error:", exc)
-    return
+    return r
 
 # ----------------------------------------------------------------------------
 class ic_t(ida_kernwin.Choose):
