@@ -132,9 +132,9 @@ def menu():
     # call predefined query (check src for details)
     lst(fc("LoadLibrary", fuzzy=True))
     lst(find_memcpy())
-    list(find_gpa())
-    list(find_malloc())
-    list(find_sprintf())
+    lst(find_gpa())
+    lst(find_malloc())
+    lst(find_sprintf())
     """)
     return
 
