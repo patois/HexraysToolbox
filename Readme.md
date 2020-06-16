@@ -120,3 +120,9 @@ query = lambda cfunc, e: (e.op in
             hr.cot_sdiv, hr.cot_smod])
 ic_t(query)
 ```
+### 6) get list of "if" statements, display result in chooser
+```
+from idaapi import *
+from hr_toolbox import ic_t
+lst(lambda cf, i: i.op is cit_if, full=True)
+```

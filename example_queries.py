@@ -103,17 +103,13 @@ def menu():
     # query entire db, print results
     qdb(lambda cf, e: e.op is cot_call)
 
-    # query list of predefined addresses, print results
-    q(lambda cf, e: e.op is cot_call, [here()], lambda e: "%s" % get_name(e.x.obj_ea)[::-1])
-
     # query current function, print results
     q(lambda cf, e: e.op is cit_if and e.cif.expr.op is cot_land)
 
     # query list of predefined addresses, show results in chooser
     lst(lambda cf, e: e.op is cot_call and e.x.op is cot_obj and get_name(e.x.obj_ea) == "strcat", Functions())
-
-    # query current function, show results in chooser
-    lst(lambda cf, e: e.op is cot_call and e.x.op is cot_obj)
+    lst(lambda cf, e: e.op is cot_var and cf.lvars[e.v.idx].is_stk_var())
+    lst(lambda cf, i: i.op is cit_if, full=True)
     """)
     return
 
