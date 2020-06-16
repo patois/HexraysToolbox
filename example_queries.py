@@ -85,7 +85,7 @@ def find_gpa():
         is_strlit(get_flags(e.a[1].obj_ea)))
 
     gpa = get_name_ea_simple(func_name)
-    ea_set = ([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
+    ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
     return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------

@@ -219,7 +219,7 @@ def display(f,
     try:
         r = f()
         print("<display> done! %d unique hits." % len(r))
-        for e in res:
+        for e in r:
             print(fmt(e))
     except Exception as exc:
         print("<display> error:", exc)
