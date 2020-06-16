@@ -135,7 +135,7 @@ def menu():
     lst(find_gpa())
     lst(find_malloc())
     lst(find_sprintf())
-    lst(query_db(lambda cf,i: is_loop(i.op)))
+    lst(qdb(lambda cf,i: is_loop(i.op)))
     """)
     return
 

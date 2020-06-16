@@ -12,7 +12,8 @@ can be used to find code patterns within decompiled code:
   architecture
 - many more, limited (almost) only by the queries you'll come up with ;)
 
-The query shown below can be used to detect CVE-2019-3568 in libwhatsapp.so
+The query shown below can be used to detect CVE-2019-3568 in libwhatsapp.so.
+Find the example script ![here](./locate_cve_2019_3568.py)
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
 
