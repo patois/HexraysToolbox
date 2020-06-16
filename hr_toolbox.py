@@ -4,7 +4,7 @@ import idautils
 import ida_kernwin
 import ida_lines
 import ida_funcs
-
+from ida_idaapi import __EA64__
 
 __author__ = "Dennis Elser @ https://github.com/patois"
 
@@ -169,18 +169,18 @@ def exec_query(q, ea_list, no_cit):
     return result
 
 # ----------------------------------------------------------------------------
-def query_db(q, no_cit=False):
+def query_db(q, no_cit=False, do_print=False):
     """run query on idb, print results
     
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-    no_cit:      False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
+    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
     returns list of tb_result_t objects
     """
 
-    return query(q, ea_list=idautils.Functions(), no_cit=no_cit)
+    return query(q, ea_list=idautils.Functions(), no_cit=no_cit, do_print=do_print)
 
 # ----------------------------------------------------------------------------
 def query(q, ea_list=None, no_cit=False, do_print=False):
@@ -267,4 +267,4 @@ class ic_t(ida_kernwin.Choose):
         self.Refresh()
 
     def _make_choser_entry(self, n):
-        return ["%x" % self.items[n].ea, self.items[n].v]
+        return ["%016x" % (self.items[n].ea) if __EA64__ else "%08x" % (self.items[n].ea), self.items[n].v]
