@@ -1,5 +1,10 @@
 import ida_hexrays as hr
-import ida_bytes, idautils, ida_kernwin, ida_lines
+import ida_bytes
+import idautils
+import ida_kernwin
+import ida_lines
+import ida_funcs
+
 
 __author__ = "Dennis Elser @ https://github.com/patois"
 
@@ -81,7 +86,9 @@ def find_item(ea, item, findall=True, parents=False):
             return self.process(e)
 
     try:
-        cfunc = hr.decompile(ea)
+        f = ida_funcs.get_func(ea)
+        if f:
+            cfunc = hr.decompile(f)
     except:
         print("%x: unable to decompile." % ea)
         return list()
@@ -123,13 +130,14 @@ def find_expr(ea, expr, findall=True, parents=False):
 
             if self.expr(self.cfunc, e):
                 self.found.append(e)
-                #print("dbg %x" % e.ea)
                 if not self.findall:
                     return 1
             return 0
 
     try:
-        cfunc = hr.decompile(ea)
+        f = ida_funcs.get_func(ea)
+        if f:
+            cfunc = hr.decompile(f)
     except:
         print("%x: unable to decompile." % ea)
         return list()
