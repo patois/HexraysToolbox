@@ -1,7 +1,18 @@
 # Hexrays Toolbox
 
 Hexrays Toolbox is a script for the Hexrays Decompiler which
-can be used to find code patterns within decompiled code.
+can be used to find code patterns within decompiled code:
+
+- scan binary files for known and unknown vulnerabilities
+- locate code patterns from previously reverse engineered executables
+  within newly decompiled code
+- malware variant analysis
+- find code similarities across several binaries
+- find code patterns from one architecture within executable code of another
+  architecture
+- many more, limited (almost) only by the queries you'll come up with ;)
+
+The query shown below can be used to detect CVE-2019-3568 in libwhatsapp.so
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
 
@@ -113,7 +124,7 @@ for e in r:
 from idaapi import *
 from hr_toolbox import ic_t
 query = lambda cfunc, e: (e.op in
-            [hr.cot_asgsshr, hr. cot_asgsdiv,
+            [hr.cot_asgsshr, hr.cot_asgsdiv,
             hr.cot_asgsmod, hr.cot_sge,
             hr.cot_sle, hr.cot_sgt,
             hr.cot_slt, hr.cot_sshr,
