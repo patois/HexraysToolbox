@@ -13,7 +13,7 @@ def locate_CVE_2019_3568():
             e.cif.expr.y.y.numval() == 51200)
 
     locations=set(CodeRefsTo(get_name_ea(BADADDR, "__aeabi_memcpy"), False))
-    return query(expr, locations, full=True)
+    return query(expr, locations)
 
 if __name__ == "__main__":
     print("Attempting to locate CVE-2019-3568...")

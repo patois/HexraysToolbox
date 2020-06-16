@@ -54,14 +54,12 @@ class tb_result_t():
         return "%x: %s" % (self.ea, self.v)
 
 # ----------------------------------------------------------------------------
-def find_item(ea, q, findall=True, parents=False):
+def find_item(ea, q, parents=False):
     """find item within AST of decompiled function
 
     arguments:
     ea:         address belonging to a function
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-    findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
-                True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
@@ -69,11 +67,10 @@ def find_item(ea, q, findall=True, parents=False):
     """
 
     class citem_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, q, findall, parents):
+        def __init__(self, cfunc, q, parents):
             hr.ctree_visitor_t.__init__(self,
                 hr.CV_PARENTS if parents else hr.CV_FAST)
 
-            self.findall = findall
             self.cfunc = cfunc
             self.query = q
             self.found = list()
@@ -84,8 +81,6 @@ def find_item(ea, q, findall=True, parents=False):
 
             if self.query(self.cfunc, i):
                 self.found.append(tb_result_t(i))
-                if not self.findall:
-                    return 1
             return 0
 
         def visit_insn(self, i):
@@ -103,20 +98,18 @@ def find_item(ea, q, findall=True, parents=False):
         return list()
 
     if cfunc:
-        itfinder = citem_finder_t(cfunc, q, findall, parents)
+        itfinder = citem_finder_t(cfunc, q, parents)
         itfinder.apply_to(cfunc.body, None)
         return itfinder.found
     return list()
 
 # ----------------------------------------------------------------------------
-def find_expr(ea, q, findall=True, parents=False):
+def find_expr(ea, q, parents=False):
     """find expression within AST of decompiled function
     
     arguments:
     ea:         address belonging to a function
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-    findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
-                True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
@@ -124,11 +117,10 @@ def find_expr(ea, q, findall=True, parents=False):
     """
 
     class expr_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, q, findall, parents):
+        def __init__(self, cfunc, q, parents):
             hr.ctree_visitor_t.__init__(self,
                 hr.CV_PARENTS if parents else hr.CV_FAST)
 
-            self.findall = findall
             self.cfunc = cfunc
             self.query = q
             self.found = list()
@@ -139,8 +131,6 @@ def find_expr(ea, q, findall=True, parents=False):
 
             if self.query(self.cfunc, e):
                 self.found.append(tb_result_t(e))
-                if not self.findall:
-                    return 1
             return 0
 
     try:
@@ -152,13 +142,13 @@ def find_expr(ea, q, findall=True, parents=False):
         return list()
 
     if cfunc:
-        expfinder = expr_finder_t(cfunc, q, findall, parents)
+        expfinder = expr_finder_t(cfunc, q, parents)
         expfinder.apply_to_exprs(cfunc.body, None)
         return expfinder.found
     return list()
 
 # ----------------------------------------------------------------------------
-def exec_query(q, ea_list, full):
+def exec_query(q, ea_list, no_cit):
     """run query on list of addresses
 
     convenience wrapper function around find_item()
@@ -166,67 +156,51 @@ def exec_query(q, ea_list, full):
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
-    full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+    no_cit:     False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
     returns list of tb_result_t objects
     """
 
-    find_elem = find_item if full else find_expr
+    find_elem = find_item if not no_cit else find_expr
     result = list()
     for ea in ea_list:
         result += [e for e in find_elem(ea, q)]
     return result
 
 # ----------------------------------------------------------------------------
-def query_db(q, full=False):
+def query_db(q, no_cit=False):
     """run query on idb, print results
     
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-    full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+    no_cit:      False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     """
 
-    return query(q, ea_list=idautils.Functions(), full=full)
+    return query(q, ea_list=idautils.Functions(), no_cit=no_cit)
 
 # ----------------------------------------------------------------------------
-def query(q, ea_list=None, full=False):
+def query(q, ea_list=None, no_cit=False):
     """run query on list of addresses, print results
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
-    full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     """
 
     if not ea_list:
         ea_list = [ida_kernwin.get_screen_ea()]
 
-    r = exec_query(q, ea_list=ea_list, full=full)
+    r = exec_query(q, ea_list=ea_list, no_cit=no_cit)
     print("<query> done! %d unique hits." % len(r))
     try:
         for e in r:
-            print("%x: %s" % (e[0], e[1]))
-    except Exception as exc:
-        print("<query> error:", exc)
-    return
-
-# ----------------------------------------------------------------------------
-def display(f):
-    """execute function f and print results
-
-    arguments:
-    f:      function that is expected to return a list of tb_result_t objects
-    """
-    try:
-        r = f()
-        print("<display> done! %d unique hits." % len(r))
-        for e in r:
             print("%x: %s" % (e.ea, e.v))
     except Exception as exc:
-        print("<display> error:", exc)
+        print("<query> error:", exc)
     return
 
 # ----------------------------------------------------------------------------
@@ -235,12 +209,13 @@ class ic_t(ida_kernwin.Choose):
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+                or list of tb_result_t objects
     ea_list:    iterable of addresses/functions to process
-    full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     """
 
-    def __init__(self, q, ea_list=None, full=False,
+    def __init__(self, q, ea_list=None, no_cit=False,
             flags=ida_kernwin.CH_RESTORE | ida_kernwin.CH_QFLT,
             width=None, height=None, embedded=False, modal=False):
         ida_kernwin.Choose.__init__(
@@ -255,7 +230,13 @@ class ic_t(ida_kernwin.Choose):
 
         if ea_list is None:
             ea_list =[ida_kernwin.get_screen_ea()]
-        self.items = exec_query(q, ea_list, full)
+        if callable(q):
+            self.items = exec_query(q, ea_list, no_cit)
+        elif isinstance(q, list):
+            self.items = q
+        else:
+            self.items = list()
+
         self.Show()
 
     def OnClose(self):
@@ -275,10 +256,10 @@ class ic_t(ida_kernwin.Choose):
         self.items.append(data)
         self.Refresh()
         return
-
+    """
     def set_data(self, data):
         self.items = data
         self.Refresh()
-    """
+
     def _make_choser_entry(self, n):
         return ["%x" % self.items[n].ea, self.items[n].v]

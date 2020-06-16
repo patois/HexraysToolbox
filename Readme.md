@@ -20,25 +20,36 @@ Loading hr_toolbox.py with IDA (alt-f7) will make
 available the "find_expr()" and "find_item()" functions
 to the IDAPython CLI and the script interpreter (shift-f2).
 
-The functions find_expr() and find_item() accept two arguments:
 ```
     find_item(ea, q)
     find_expr(ea, q)
 
-    ea:         address of a valid function within
-                the current database
-    q:          lambda function
-                custom lambda function with the following arguments:
-                1. cfunc: cfunc_t
-                2. i/e:   cinsn_t/cexpr_t
+    Positional arguments:
+        ea:         address of a valid function within
+                    the current database
+        q:          lambda function
+                    custom lambda function with the following arguments:
+                    1. cfunc: cfunc_t
+                    2. i/e:   cinsn_t/cexpr_t
+    Returns:
+        list of tb_result_t objects
 
     Example:
-    find_expr(here(), lambda cf, e: e.op is cot_call)
+        find_expr(here(), lambda cf, e: e.op is cot_call)
     
-    -> finds and returns all function calls within a current function
+        -> finds and returns all function calls within a current function.
+        The returned data is a list of tb_result_t objects (see hr_toolbox.py).
+
+        The returned list can be passed to an instance of the ic_t class,
+        which causes the data to be displayed by a chooser as follows:
+
+        from idaapi import *
+        import hr_toolbox as tb
+        tb.ic_t(find_expr(here(), lambda cf,e:e.op is cot_call))
+
 
     Please find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
-    within hexrays.hpp for help and further details.
+    within hexrays.hpp for further help and details.
 ```
 Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin which may assist in writing respective queries.
 
@@ -55,7 +66,7 @@ Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) p
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_eq and e.y.op is cot_num and e.y.numval() == 0
-r = [e for e in find_expr(here(), query)]
+r = [e for e in find_expr(here(), query, no_cit=True)]
 for e in r:
     print(e)
 ```
@@ -70,7 +81,7 @@ for e in r:
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_call and e.x.op is cot_obj
-r = [e for e in find_expr(here(), query)]
+r = [e for e in find_expr(here(), query, no_cit=True)]
 for e in r:
     print(e)
 ```
@@ -92,7 +103,7 @@ query = lambda cfunc, e: (e.op is cot_call and
            e.a[0].op is cot_var and
            cfunc.lvars[e.a[0].v.idx].is_stk_var())
 for ea in Functions():
-    r += [e for e in find_expr(ea, query)]
+    r += [e for e in find_expr(ea, query, no_cit=True)]
 for e in r:
     print(e)
 ```
@@ -115,7 +126,7 @@ query = lambda cfunc, e: (e.op is cot_call and
     is_strlit(get_flags(e.a[1].obj_ea)) and
     b'%s' in get_strlit_contents(e.a[1].obj_ea, -1, 0, STRCONV_ESCAPE))
 for ea in Functions():
-    r += [e for e in find_expr(ea, query)]
+    r += [e for e in find_expr(ea, query, no_cit=True)]
 for e in r:
     print(e)
 ```
@@ -135,5 +146,5 @@ ic_t(query)
 ```
 from idaapi import *
 from hr_toolbox import ic_t
-ic_t(lambda cf, i: i.op is cit_if, full=True)
+ic_t(lambda cf, i: i.op is cit_if)
 ```

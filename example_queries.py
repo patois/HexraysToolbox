@@ -4,21 +4,36 @@ from idaapi import *
 __author__ = "https://github.com/patois"
 
 # ----------------------------------------------------------------------------
-def find_calls():
-    """find function calls
-    example function to be passed to hr_toolbox.display()
-
+def fc(func_name, fuzzy=False):
+    """find function calls to 'func_name'
+    
     """
 
-    query = lambda cf, e: (e.op is cot_call and
-        e.x.op is cot_obj)
+    if fuzzy:
+        name = func_name.lower()
+        query = lambda cf, e: (e.op is cot_call and
+            e.x.op is cot_obj and
+            name in get_name(e.x.obj_ea).lower())
+        
+        # we're not looking for cit_... items in this query - set no_cit flag
+        return tb.exec_query(query, Functions(), no_cit=True)
 
-    return tb.query_db(query)
+    # else...
+    ea = get_name_ea(BADADDR, func_name)
+    if ea != BADADDR:
+        query = lambda cf, e: (e.op is cot_call and
+            e.x.op is cot_obj and
+            get_name(e.x.obj_ea) == func_name)
+
+        # we're not looking for cit_... items in this query - set no_cit flag
+        return tb.exec_query(query, ea_list=list(set(CodeRefsTo(ea, True))), no_cit=True)
+    
+    return list()
 
 # ----------------------------------------------------------------------------
 def find_memcpy():
     """find calls to memcpy() where the 'n' argument is signed
-    example function to be passed to hr_toolbox.display()
+    we're going through all functions in order to pick up inlined memcpy() calls
 
     """
 
@@ -29,12 +44,12 @@ def find_memcpy():
         e.a[2].op is cot_var and
         cf.lvars[e.a[2].v.idx].tif.is_signed())
 
-    return tb.query_db(query)
+    # we're not looking for cit_... items in this query - set no_cit flag
+    return tb.exec_query(query, ea_list=Functions(), no_cit=True)
 
 # ----------------------------------------------------------------------------
 def find_sprintf():
     """find calls to sprintf() where the format string argument contains '%s'
-    example function to be passed to hr_toolbox.display()
 
     """
     func_name = 'sprintf'
@@ -49,7 +64,9 @@ def find_sprintf():
 
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
-    return tb.exec_query(query, ea_set, False)
+    
+    # we're not looking for cit_... items in this query - set no_cit flag
+    return tb.exec_query(query, ea_set, no_cit=True)
 
 # ----------------------------------------------------------------------------
 def find_malloc():
@@ -67,7 +84,9 @@ def find_malloc():
 
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
-    return tb.exec_query(query, ea_set, False)
+    
+    # we're not looking for cit_... items in this query - set no_cit flag
+    return tb.exec_query(query, ea_set, no_cit=True)
 
 # ----------------------------------------------------------------------------
 def find_gpa():
@@ -86,7 +105,9 @@ def find_gpa():
 
     gpa = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
-    return tb.exec_query(query, ea_set, False)
+    
+    # we're not looking for cit_... items in this query - set no_cit flag
+    return tb.exec_query(query, ea_set, no_cit=True)
 
 # ----------------------------------------------------------------------------
 def menu():
@@ -94,27 +115,30 @@ def menu():
 
     menu()
 
-    # run predefined queries
-    d(find_calls)
-    d(find_memcpy)
-    d(find_sprintf)
-    d(find_malloc)
- 
-    # query entire db, print results
-    qdb(lambda cf, e: e.op is cot_call)
+    # query entire db, print results (ignore cit_...)
+    qdb(lambda cf, e: e.op is cot_call, no_cit=True)
 
     # query current function, print results
     q(lambda cf, e: e.op is cit_if and e.cif.expr.op is cot_land)
 
     # query list of predefined addresses, show results in chooser
-    lst(lambda cf, e: e.op is cot_call and e.x.op is cot_obj and get_name(e.x.obj_ea) == "strcat", Functions())
-    lst(lambda cf, e: e.op is cot_var and cf.lvars[e.v.idx].is_stk_var())
-    lst(lambda cf, i: i.op is cit_if, full=True)
+    lst(lambda cf, e: (e.op is cot_call and
+                        e.x.op is cot_obj and
+                        get_name(e.x.obj_ea) == "strcat"),
+                        Functions(), no_cit=True)
+    lst(lambda cf, e: e.op is cot_var and cf.lvars[e.v.idx].is_stk_var(), no_cit=True)
+    lst(lambda cf, i: i.op is cit_if)
+
+    # call predefined query (check src for details)
+    lst(fc("LoadLibrary", fuzzy=True))
+    lst(find_memcpy())
+    list(find_gpa())
+    list(find_malloc())
+    list(find_sprintf())
     """)
     return
 
 if __name__ == "__main__":
-    from hr_toolbox import display as d
     from hr_toolbox import query as q
     from hr_toolbox import query_db as qdb
     from hr_toolbox import ic_t as lst
