@@ -108,3 +108,15 @@ for ea in Functions():
 for e in r:
     print(e)
 ```
+### 5) get list of signed operators, display result in chooser
+```
+from idaapi import *
+from hr_toolbox import ic_t
+query = lambda cfunc, e: (e.op in
+            [hr.cot_asgsshr, hr. cot_asgsdiv,
+            hr.cot_asgsmod, hr.cot_sge,
+            hr.cot_sle, hr.cot_sgt,
+            hr.cot_slt, hr.cot_sshr,
+            hr.cot_sdiv, hr.cot_smod])
+ic_t(query)
+```
