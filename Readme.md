@@ -148,9 +148,10 @@ from idaapi import *
 from hr_toolbox import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
-### 7) get list of loop statements, display result in chooser
+### 7) get list of all loop statements from db, display result in chooser
 ```
 from idaapi import *
-from hr_toolbox import ic_t, find_item
-ic_t(find_item(here(), lambda cf,i: is_loop(i.op)))
+from hr_toolbox import ic_t, query_db
+ic_t(query_db(lambda cf,i: is_loop(i.op)))
 ```
+![loops detected](./rsrc/loops.png?raw=true)
