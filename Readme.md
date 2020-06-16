@@ -124,5 +124,5 @@ ic_t(query)
 ```
 from idaapi import *
 from hr_toolbox import ic_t
-lst(lambda cf, i: i.op is cit_if, full=True)
+ic_t(lambda cf, i: i.op is cit_if, full=True)
 ```
