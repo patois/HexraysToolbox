@@ -66,7 +66,7 @@ Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) p
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_eq and e.y.op is cot_num and e.y.numval() == 0
-r = [e for e in find_expr(here(), query, no_cit=True)]
+r = [e for e in find_expr(here(), query)]
 for e in r:
     print(e)
 ```
@@ -81,7 +81,7 @@ for e in r:
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_call and e.x.op is cot_obj
-r = [e for e in find_expr(here(), query, no_cit=True)]
+r = [e for e in find_expr(here(), query)]
 for e in r:
     print(e)
 ```
@@ -103,7 +103,7 @@ query = lambda cfunc, e: (e.op is cot_call and
            e.a[0].op is cot_var and
            cfunc.lvars[e.a[0].v.idx].is_stk_var())
 for ea in Functions():
-    r += [e for e in find_expr(ea, query, no_cit=True)]
+    r += [e for e in find_expr(ea, query)]
 for e in r:
     print(e)
 ```
@@ -126,7 +126,7 @@ query = lambda cfunc, e: (e.op is cot_call and
     is_strlit(get_flags(e.a[1].obj_ea)) and
     b'%s' in get_strlit_contents(e.a[1].obj_ea, -1, 0, STRCONV_ESCAPE))
 for ea in Functions():
-    r += [e for e in find_expr(ea, query, no_cit=True)]
+    r += [e for e in find_expr(ea, query)]
 for e in r:
     print(e)
 ```
@@ -147,4 +147,10 @@ ic_t(query)
 from idaapi import *
 from hr_toolbox import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
+```
+### 7) get list of loop statements, display result in chooser
+```
+from idaapi import *
+from hr_toolbox import ic_t, find_item
+ic_t(find_item(here(), lambda cf,i: is_loop(i.op)))
 ```
