@@ -45,36 +45,45 @@ Todo:
 """
 
 # ----------------------------------------------------------------------------
-def find_item(ea, item, findall=True, parents=False):
+class tb_result_t():
+    def __init__(self, i):
+        self.ea = i.ea
+        self.v = ida_lines.tag_remove(i.print1(None))
+
+    def __str__(self):
+        return "%x: %s" % (self.ea, self.v)
+
+# ----------------------------------------------------------------------------
+def find_item(ea, q, findall=True, parents=False):
     """find item within AST of decompiled function
 
     arguments:
     ea:         address belonging to a function
-    item:       lambda/function: f(cfunc_t, citem_t) returning a bool
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
-    returns list of citem_t items
+    returns list of tb_result_t objects
     """
 
     class citem_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, i, parents):
+        def __init__(self, cfunc, q, findall, parents):
             hr.ctree_visitor_t.__init__(self,
                 hr.CV_PARENTS if parents else hr.CV_FAST)
 
             self.findall = findall
             self.cfunc = cfunc
-            self.item = i
+            self.query = q
             self.found = list()
             return
 
         def process(self, i):
             """process cinsn_t and cexpr_t elements alike"""
 
-            if self.item(self.cfunc, i):
-                self.found.append(i)
+            if self.query(self.cfunc, i):
+                self.found.append(tb_result_t(i))
                 if not self.findall:
                     return 1
             return 0
@@ -94,42 +103,42 @@ def find_item(ea, item, findall=True, parents=False):
         return list()
 
     if cfunc:
-        itfinder = citem_finder_t(cfunc, item, parents)
+        itfinder = citem_finder_t(cfunc, q, findall, parents)
         itfinder.apply_to(cfunc.body, None)
         return itfinder.found
     return list()
 
 # ----------------------------------------------------------------------------
-def find_expr(ea, expr, findall=True, parents=False):
+def find_expr(ea, q, findall=True, parents=False):
     """find expression within AST of decompiled function
     
     arguments:
     ea:         address belonging to a function
-    expr:       lambda/function: f(cfunc_t, citem_t) returning a bool
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     findall:    False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
-    returns list of cexpr_t items
+    returns list of tb_result_t objects
     """
 
     class expr_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, expr, parents):
+        def __init__(self, cfunc, q, findall, parents):
             hr.ctree_visitor_t.__init__(self,
                 hr.CV_PARENTS if parents else hr.CV_FAST)
 
             self.findall = findall
             self.cfunc = cfunc
-            self.expr = expr
+            self.query = q
             self.found = list()
             return
 
         def visit_expr(self, e):
             """process cexpr_t elements"""
 
-            if self.expr(self.cfunc, e):
-                self.found.append(e)
+            if self.query(self.cfunc, e):
+                self.found.append(tb_result_t(e))
                 if not self.findall:
                     return 1
             return 0
@@ -143,7 +152,7 @@ def find_expr(ea, expr, findall=True, parents=False):
         return list()
 
     if cfunc:
-        expfinder = expr_finder_t(cfunc, expr, parents)
+        expfinder = expr_finder_t(cfunc, q, findall, parents)
         expfinder.apply_to_exprs(cfunc.body, None)
         return expfinder.found
     return list()
@@ -160,7 +169,7 @@ def exec_query(q, ea_list, full):
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
-    returns list of cexpr_t/citem_t
+    returns list of tb_result_t objects
     """
 
     find_elem = find_item if full else find_expr
@@ -170,27 +179,19 @@ def exec_query(q, ea_list, full):
     return result
 
 # ----------------------------------------------------------------------------
-def query_db(q,
-        full=False,
-        fmt=lambda x:"%x: %s" % (x.ea,
-            ida_lines.tag_remove(x.print1(None)))):
+def query_db(q, full=False):
     """run query on idb, print results
     
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
-    fmt:        lambda/callback-function to be called for formatting output
     """
 
-    return query(q, ea_list=idautils.Functions(), full=full, fmt=fmt)
+    return query(q, ea_list=idautils.Functions(), full=full)
 
 # ----------------------------------------------------------------------------
-def query(q,
-        ea_list=None,
-        full=False,
-        fmt=lambda x:"%x: %s" % (x.ea,
-            ida_lines.tag_remove(x.print1(None)))):
+def query(q, ea_list=None, full=False):
     """run query on list of addresses, print results
 
     arguments:
@@ -198,7 +199,6 @@ def query(q,
     ea_list:    iterable of addresses/functions to process
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
-    fmt:        lambda/callback-function to be called for formatting output
     """
 
     if not ea_list:
@@ -208,45 +208,25 @@ def query(q,
     print("<query> done! %d unique hits." % len(r))
     try:
         for e in r:
-            print(fmt(e))
+            print("%x: %s" % (e[0], e[1]))
     except Exception as exc:
         print("<query> error:", exc)
     return
 
 # ----------------------------------------------------------------------------
-def display(f,
-        fmt=lambda x:"%x: %s" % (x.ea,
-            ida_lines.tag_remove(x.print1(None)))):
-    """execute function f and print results according to fmt.
+def display(f):
+    """execute function f and print results
 
     arguments:
-    f:      function that is expected to return a list of citem_t/cexpr_t objects
-    fmt:    lambda/callback-function to be called for formatting output
+    f:      function that is expected to return a list of tb_result_t objects
     """
     try:
         r = f()
         print("<display> done! %d unique hits." % len(r))
         for e in r:
-            print(fmt(e))
+            print("%x: %s" % (e.ea, e.v))
     except Exception as exc:
         print("<display> error:", exc)
-    return
-
-# ----------------------------------------------------------------------------
-def display_argstr(f, idx):
-    """execute function f and print results.
-
-    arguments:
-    f:      function that is expected to return a list of citem_t/cexpr_t objects
-    idx:    index into the argument list of a cexpr_t 
-    """
-
-    try:
-        display(f, fmt=lambda x:"%x: %s" % (x.ea,
-            ida_bytes.get_strlit_contents(x.a[idx].obj_ea, -1, 0,
-                ida_bytes.STRCONV_ESCAPE).decode("utf-8")))
-    except Exception as exc:
-        print("<display_argstr> error:", exc)
     return
 
 # ----------------------------------------------------------------------------
@@ -258,17 +238,16 @@ class ic_t(ida_kernwin.Choose):
     ea_list:    iterable of addresses/functions to process
     full:       False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
-    fmt:        lambda/callback-function to be called for formatting output
     """
 
     def __init__(self, q, ea_list=None, full=False,
-            fmt=lambda x:"%x: %s" % (x.ea, ida_lines.tag_remove(x.print1(None))),
             flags=ida_kernwin.CH_RESTORE | ida_kernwin.CH_QFLT,
             width=None, height=None, embedded=False, modal=False):
         ida_kernwin.Choose.__init__(
             self,
             "Hexrays Toolbox",
-            [ ["List of results", 60]],
+            [ ["Address", 10 | ida_kernwin.CHCOL_EA],
+              ["Output", 80 | ida_kernwin.CHCOL_PLAIN]],
             flags = flags,
             width = width,
             height = height,
@@ -277,7 +256,6 @@ class ic_t(ida_kernwin.Choose):
         if ea_list is None:
             ea_list =[ida_kernwin.get_screen_ea()]
         self.items = exec_query(q, ea_list, full)
-        self.fmt = fmt
         self.Show()
 
     def OnClose(self):
@@ -292,6 +270,7 @@ class ic_t(ida_kernwin.Choose):
     def OnGetSize(self):
         return len(self.items)
 
+    """
     def append(self, data):
         self.items.append(data)
         self.Refresh()
@@ -300,6 +279,6 @@ class ic_t(ida_kernwin.Choose):
     def set_data(self, data):
         self.items = data
         self.Refresh()
-
+    """
     def _make_choser_entry(self, n):
-        return [self.fmt(self.items[n])]
+        return ["%x" % self.items[n].ea, self.items[n].v]
