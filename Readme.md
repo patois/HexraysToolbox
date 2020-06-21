@@ -52,7 +52,7 @@ to the IDAPython CLI and the script interpreter (shift-f2).
     Please find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
     within hexrays.hpp for further help and details.
 ```
-Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin which may assist in writing respective queries.
+Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin and the [IDAPyHelper](https://github.com/patois/IDAPyHelper) script which may assist in writing respective queries.
 
 ## Examples:
 
