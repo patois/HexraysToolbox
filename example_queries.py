@@ -15,8 +15,7 @@ def fc(func_name, fuzzy=False):
             e.x.op is cot_obj and
             name in get_name(e.x.obj_ea).lower())
         
-        # we're not looking for cit_... items in this query - set no_cit flag
-        return tb.exec_query(query, Functions(), True)
+        return tb.exec_query(query, Functions(), False)
 
     # else...
     ea = get_name_ea(BADADDR, func_name)
@@ -25,8 +24,7 @@ def fc(func_name, fuzzy=False):
             e.x.op is cot_obj and
             get_name(e.x.obj_ea) == func_name)
 
-        # we're not looking for cit_... items in this query - set no_cit flag
-        return tb.exec_query(query, list(set(CodeRefsTo(ea, True))), True)
+        return tb.exec_query(query, list(set(CodeRefsTo(ea, True))), False)
     
     return list()
 
@@ -44,8 +42,7 @@ def find_memcpy():
         e.a[2].op is cot_var and
         cf.lvars[e.a[2].v.idx].tif.is_signed())
 
-    # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, Functions(), True)
+    return tb.exec_query(query, Functions(), False)
 
 # ----------------------------------------------------------------------------
 def find_sprintf():
@@ -65,8 +62,7 @@ def find_sprintf():
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
-    # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, True)
+    return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def find_malloc():
@@ -85,8 +81,7 @@ def find_malloc():
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
-    # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, True)
+    return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def find_gpa():
@@ -106,8 +101,7 @@ def find_gpa():
     gpa = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
     
-    # we're not looking for cit_... items in this query - set no_cit flag
-    return tb.exec_query(query, ea_set, True)
+    return tb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def menu():
@@ -116,7 +110,7 @@ def menu():
     menu()
 
     # query entire db, print results (ignore cit_...)
-    qdb(lambda cf, e: e.op is cot_call, no_cit=True)
+    qdb(lambda cf, e: e.op is cot_call, query_full=False)
 
     # query current function, print results
     q(lambda cf, e: e.op is cit_if and e.cif.expr.op is cot_land)
@@ -125,8 +119,8 @@ def menu():
     lst(lambda cf, e: (e.op is cot_call and
                         e.x.op is cot_obj and
                         get_name(e.x.obj_ea) == "strcat"),
-                        Functions(), no_cit=True)
-    lst(lambda cf, e: e.op is cot_var and cf.lvars[e.v.idx].is_stk_var(), no_cit=True)
+                        Functions(), query_full=False)
+    lst(lambda cf, e: e.op is cot_var and cf.lvars[e.v.idx].is_stk_var(), query_full=False)
     lst(lambda cf, i: i.op is cit_if)
 
     # call predefined query (check src for details)

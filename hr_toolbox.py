@@ -148,7 +148,7 @@ def find_expr(ea, q, parents=False):
     return list()
 
 # ----------------------------------------------------------------------------
-def exec_query(q, ea_list, no_cit):
+def exec_query(q, ea_list, query_full):
     """run query on list of addresses
 
     convenience wrapper function around find_item()
@@ -156,40 +156,40 @@ def exec_query(q, ea_list, no_cit):
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
-    no_cit:     False -> find cexpr_t only (faster but doesn't find cinsn_t items)
+    query_full: False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
     returns list of tb_result_t objects
     """
 
-    find_elem = find_item if not no_cit else find_expr
+    find_elem = find_item if query_full else find_expr
     result = list()
     for ea in ea_list:
         result += [e for e in find_elem(ea, q)]
     return result
 
 # ----------------------------------------------------------------------------
-def query_db(q, no_cit=False, do_print=False):
+def query_db(q, query_full=True, do_print=False):
     """run query on idb, print results
     
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
+    query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
     returns list of tb_result_t objects
     """
 
-    return query(q, ea_list=idautils.Functions(), no_cit=no_cit, do_print=do_print)
+    return query(q, ea_list=idautils.Functions(), query_full=query_full, do_print=do_print)
 
 # ----------------------------------------------------------------------------
-def query(q, ea_list=None, no_cit=False, do_print=False):
+def query(q, ea_list=None, query_full=True, do_print=False):
     """run query on list of addresses, print results
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
     ea_list:    iterable of addresses/functions to process
-    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
+    query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
     returns list of tb_result_t objects
@@ -199,7 +199,7 @@ def query(q, ea_list=None, no_cit=False, do_print=False):
         ea_list = [ida_kernwin.get_screen_ea()]
 
     try:
-        r = exec_query(q, ea_list, no_cit)
+        r = exec_query(q, ea_list, query_full)
         if do_print:
             print("<query> done! %d unique hits." % len(r))
             for e in r:
@@ -216,11 +216,11 @@ class ic_t(ida_kernwin.Choose):
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
                 or list of tb_result_t objects
     ea_list:    iterable of addresses/functions to process
-    no_cit:     False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
+    query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     """
 
-    def __init__(self, q, ea_list=None, no_cit=False,
+    def __init__(self, q, ea_list=None, query_full=True,
             flags=ida_kernwin.CH_RESTORE | ida_kernwin.CH_QFLT,
             width=None, height=None, embedded=False, modal=False):
         ida_kernwin.Choose.__init__(
@@ -236,7 +236,7 @@ class ic_t(ida_kernwin.Choose):
         if ea_list is None:
             ea_list =[ida_kernwin.get_screen_ea()]
         if callable(q):
-            self.items = exec_query(q, ea_list, no_cit)
+            self.items = exec_query(q, ea_list, query_full)
         elif isinstance(q, list):
             self.items = q
         else:
