@@ -197,7 +197,7 @@ def query(q, ea_list=None, query_full=True, do_print=False):
 
     if not ea_list:
         ea_list = [ida_kernwin.get_screen_ea()]
-
+    r = list()
     try:
         r = exec_query(q, ea_list, query_full)
         if do_print:
