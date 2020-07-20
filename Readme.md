@@ -63,7 +63,7 @@ Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) p
       x /     \ y
 (anything)  cot_num --- n.numval() == 0
 ```
-```
+``` python
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_eq and e.y.op is cot_num and e.y.numval() == 0
@@ -78,7 +78,7 @@ for e in r:
       x /
  cot_obj
 ```
-```
+``` python
 from idaapi import *
 from hr_toolbox import find_expr
 query = lambda cfunc, e: e.op is cot_call and e.x.op is cot_obj
@@ -93,7 +93,7 @@ for e in r:
       x /
  cot_obj --- name(obj_ea) == 'memcpy'
 ```
-```
+``` python
 from idaapi import *
 from hr_toolbox import find_expr
 r = []
@@ -115,7 +115,7 @@ for e in r:
       x /
  cot_obj --- name(obj_ea) == 'sprintf'
 ```
-```
+``` python
 from idaapi import *
 from hr_toolbox import find_expr
 r = []
@@ -132,7 +132,7 @@ for e in r:
     print(e)
 ```
 ### 5) get list of signed operators, display result in chooser
-```
+``` python
 from idaapi import *
 from hr_toolbox import ic_t
 query = lambda cfunc, e: (e.op in
@@ -144,13 +144,13 @@ query = lambda cfunc, e: (e.op in
 ic_t(query)
 ```
 ### 6) get list of "if" statements, display result in chooser
-```
+``` python
 from idaapi import *
 from hr_toolbox import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
 ### 7) get list of all loop statements from db, display result in chooser
-```
+``` python
 from idaapi import *
 from hr_toolbox import ic_t, query_db
 ic_t(query_db(lambda cf,i: is_loop(i.op)))

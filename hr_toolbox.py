@@ -4,6 +4,7 @@ import idautils
 import ida_kernwin
 import ida_lines
 import ida_funcs
+import idc
 from ida_idaapi import __EA64__
 
 __author__ = "Dennis Elser @ https://github.com/patois"
@@ -227,6 +228,7 @@ class ic_t(ida_kernwin.Choose):
             self,
             "Hexrays Toolbox",
             [ ["Address", 10 | ida_kernwin.CHCOL_EA],
+              ["Function", 20 | ida_kernwin.CHCOL_FNAME],
               ["Output", 80 | ida_kernwin.CHCOL_PLAIN]],
             flags = flags,
             width = width,
@@ -267,4 +269,6 @@ class ic_t(ida_kernwin.Choose):
         self.Refresh()
 
     def _make_choser_entry(self, n):
-        return ["%016x" % (self.items[n].ea) if __EA64__ else "%08x" % (self.items[n].ea), self.items[n].v]
+        return ["%016x" % self.items[n].ea if __EA64__ else "%08x" % self.items[n].ea,
+                "%s" % idc.get_func_off_str(self.items[n].ea),
+                self.items[n].v]
