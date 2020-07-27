@@ -67,6 +67,30 @@ def find_item(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
+    try:
+        f = ida_funcs.get_func(ea)
+        if f:
+            cfunc = hr.decompile(f)
+    except:
+        print("%x: unable to decompile." % ea)
+        return list()
+
+    if cfunc:
+        return find_child_item(cfunc, cfunc.body, q, parents)
+    return list()
+
+# ----------------------------------------------------------------------------
+def find_child_item(cfunc, i, q, parents=False):
+    """find child item in cfunc_t starting at citem_t i
+    
+    arguments:
+    cfunc:      cfunc_t
+    i:          citem_t
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+
+    returns list of tb_result_t objects
+    """
+
     class citem_finder_t(hr.ctree_visitor_t):
         def __init__(self, cfunc, q, parents):
             hr.ctree_visitor_t.__init__(self,
@@ -90,17 +114,9 @@ def find_item(ea, q, parents=False):
         def visit_expr(self, e):
             return self.process(e)
 
-    try:
-        f = ida_funcs.get_func(ea)
-        if f:
-            cfunc = hr.decompile(f)
-    except:
-        print("%x: unable to decompile." % ea)
-        return list()
-
     if cfunc:
         itfinder = citem_finder_t(cfunc, q, parents)
-        itfinder.apply_to(cfunc.body, None)
+        itfinder.apply_to(i, None)
         return itfinder.found
     return list()
 
@@ -117,6 +133,30 @@ def find_expr(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
+    try:
+        f = ida_funcs.get_func(ea)
+        if f:
+            cfunc = hr.decompile(f)
+    except:
+        print("%x: unable to decompile." % ea)
+        return list()
+
+    if cfunc:
+        return find_child_expr(cfunc, cfunc.body, q, parents)
+    return list()
+
+# ----------------------------------------------------------------------------
+def find_child_expr(cfunc, e, q, parents=False):
+    """find child expression in cfunc_t starting at cexpr_t e
+    
+    arguments:
+    cfunc:      cfunc_t
+    e:          cexpr_t
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+
+    returns list of tb_result_t objects
+    """
+
     class expr_finder_t(hr.ctree_visitor_t):
         def __init__(self, cfunc, q, parents):
             hr.ctree_visitor_t.__init__(self,
@@ -134,91 +174,9 @@ def find_expr(ea, q, parents=False):
                 self.found.append(tb_result_t(e))
             return 0
 
-    try:
-        f = ida_funcs.get_func(ea)
-        if f:
-            cfunc = hr.decompile(f)
-    except:
-        print("%x: unable to decompile." % ea)
-        return list()
-
     if cfunc:
         expfinder = expr_finder_t(cfunc, q, parents)
-        expfinder.apply_to_exprs(cfunc.body, None)
-        return expfinder.found
-    return list()
-
-# ----------------------------------------------------------------------------
-def find_child_item(cfunc, i, q):
-    """find child item in cfunc_t starting at citem_t i
-    
-    arguments:
-    cfunc:      cfunc_t
-    i:          citem_t
-    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-
-    returns list of tb_result_t objects
-    """
-
-    class citem_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, q):
-            hr.ctree_visitor_t.__init__(self, hr.CV_FAST)
-
-            self.cfunc = cfunc
-            self.query = q
-            self.found = list()
-            return
-
-        def process(self, i):
-            """process cinsn_t and cexpr_t elements alike"""
-
-            if self.query(self.cfunc, i):
-                self.found.append(tb_result_t(i))
-            return 0
-
-        def visit_insn(self, i):
-            return self.process(i)
-
-        def visit_expr(self, e):
-            return self.process(e)
-
-    if cfunc:
-        itfinder = citem_finder_t(cfunc, q)
-        itfinder.apply_to(cfunc.body, i)
-        return itfinder.found
-    return list()
-
-# ----------------------------------------------------------------------------
-def find_child_expr(cfunc, e, q):
-    """find child expression in cfunc_t starting at cexpr_t e
-    
-    arguments:
-    cfunc:      cfunc_t
-    e:          cexpr_t
-    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-
-    returns list of tb_result_t objects
-    """
-
-    class expr_finder_t(hr.ctree_visitor_t):
-        def __init__(self, cfunc, q):
-            hr.ctree_visitor_t.__init__(self, hr.CV_FAST)
-
-            self.cfunc = cfunc
-            self.query = q
-            self.found = list()
-            return
-
-        def visit_expr(self, e):
-            """process cexpr_t elements"""
-
-            if self.query(self.cfunc, e):
-                self.found.append(tb_result_t(e))
-            return 0
-
-    if cfunc:
-        expfinder = expr_finder_t(cfunc, q)
-        expfinder.apply_to_exprs(cfunc.body, e)
+        expfinder.apply_to_exprs(e, None)
         return expfinder.found
     return list()
 
