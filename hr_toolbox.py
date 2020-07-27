@@ -149,6 +149,80 @@ def find_expr(ea, q, parents=False):
     return list()
 
 # ----------------------------------------------------------------------------
+def find_child_item(cfunc, i, q):
+    """find child item in cfunc_t starting at citem_t i
+    
+    arguments:
+    cfunc:      cfunc_t
+    i:          citem_t
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+
+    returns list of tb_result_t objects
+    """
+
+    class citem_finder_t(hr.ctree_visitor_t):
+        def __init__(self, cfunc, q):
+            hr.ctree_visitor_t.__init__(self, hr.CV_FAST)
+
+            self.cfunc = cfunc
+            self.query = q
+            self.found = list()
+            return
+
+        def process(self, i):
+            """process cinsn_t and cexpr_t elements alike"""
+
+            if self.query(self.cfunc, i):
+                self.found.append(tb_result_t(i))
+            return 0
+
+        def visit_insn(self, i):
+            return self.process(i)
+
+        def visit_expr(self, e):
+            return self.process(e)
+
+    if cfunc:
+        itfinder = citem_finder_t(cfunc, q)
+        itfinder.apply_to(cfunc.body, i)
+        return itfinder.found
+    return list()
+
+# ----------------------------------------------------------------------------
+def find_child_expr(cfunc, e, q):
+    """find child expression in cfunc_t starting at cexpr_t e
+    
+    arguments:
+    cfunc:      cfunc_t
+    e:          cexpr_t
+    q:          lambda/function: f(cfunc_t, citem_t) returning a bool
+
+    returns list of tb_result_t objects
+    """
+
+    class expr_finder_t(hr.ctree_visitor_t):
+        def __init__(self, cfunc, q):
+            hr.ctree_visitor_t.__init__(self, hr.CV_FAST)
+
+            self.cfunc = cfunc
+            self.query = q
+            self.found = list()
+            return
+
+        def visit_expr(self, e):
+            """process cexpr_t elements"""
+
+            if self.query(self.cfunc, e):
+                self.found.append(tb_result_t(e))
+            return 0
+
+    if cfunc:
+        expfinder = expr_finder_t(cfunc, q)
+        expfinder.apply_to_exprs(cfunc.body, e)
+        return expfinder.found
+    return list()
+
+# ----------------------------------------------------------------------------
 def exec_query(q, ea_list, query_full):
     """run query on list of addresses
 
@@ -171,7 +245,7 @@ def exec_query(q, ea_list, query_full):
 
 # ----------------------------------------------------------------------------
 def query_db(q, query_full=True, do_print=False):
-    """run query on idb, print results
+    """run query on idb
     
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
@@ -185,7 +259,7 @@ def query_db(q, query_full=True, do_print=False):
 
 # ----------------------------------------------------------------------------
 def query(q, ea_list=None, query_full=True, do_print=False):
-    """run query on list of addresses, print results
+    """run query on list of addresses
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
