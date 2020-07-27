@@ -3,9 +3,19 @@
 try:
     from idaapi import *
 except:
-    import sys, os, argparse, subprocess, logging, threading, time
+    import sys, os, argparse, subprocess, logging, threading, time, signal
 
-    def process_files(ida_path, in_path, out_path, script_path, threshold):
+    INTERRUPTED = False
+
+    def sig_handler(signum, frame):
+        global INTERRUPTED
+        INTERRUPTED = True
+        logging.warning("Ctrl-C pressed. Aborting...")
+        return
+
+    def process_files(ida_path, in_path, out_path, script_path, threads):
+        if threads < 1:
+            return
 
         input_files = list()
         for root, dirs, files in os.walk(in_path):
@@ -13,13 +23,14 @@ except:
                 input_files.append(os.path.join(root, f))
 
         total_files = len(input_files)
-
-        logging.info("Starting to process %d files (%d parallel instances)" % (total_files, threshold))
-
-        event = threading.Event()
         cur_file = 0
+
+        logging.info("Starting to process %d files (max %d concurrent threads)" % (total_files, threads))
+        event = threading.Event()
+        signal.signal(signal.SIGINT, sig_handler)
+
         while len(input_files):
-            while threading.active_count() <= threshold:
+            while threading.active_count() <= threads:
                 if not len(input_files):
                     break
                 f = input_files.pop(0)
@@ -31,16 +42,28 @@ except:
                             f)
                 logging.debug("Running %s" % cmdline)
                 logging.info("Thread %d/%d: processing file %d/%d - \"%s\"" % (threading.active_count(),
-                                                                            threshold,
+                                                                            threads,
                                                                             cur_file,
                                                                             total_files,
                                                                             f))
                 ida_instance(cmdline, event).start()
-            if threading.active_count():
-                logging.debug("Maximum reached. Waiting...")
-                event.wait()
-                event.clear()
 
+            logging.debug("Threshold reached / no more files in queue. Waiting...")
+            event.wait()
+            event.clear()
+
+            if INTERRUPTED:
+                # empty list
+                input_files = list()
+                logging.warning("Interrupted. Waiting for %d remaining instances to finish" % (threading.active_count()-1))
+
+        count = threading.active_count()
+        while count > 1:
+            logging.debug(threading.enumerate())
+            logging.info("Waiting for %d more IDA instances to finish" % (count-1))
+            event.wait()
+            event.clear()
+            count = threading.active_count()
         return
 
     class ida_instance(threading.Thread):
@@ -51,9 +74,10 @@ except:
             return
 
         def run_ida_instance(self):
-            subprocess.run(self.cmdline)
+            cp = subprocess.run(self.cmdline)
+            logging.debug("IDA instance terminated (exit code %d)" % (cp.returncode))
             self.event.set()
-            return
+            return cp.returncode
 
         def run(self):
             self.run_ida_instance()
@@ -63,19 +87,19 @@ except:
         parser = argparse.ArgumentParser()
         parser.add_argument("idapath",
                             type=str,
-                            help="path to IDA executable (ida/ida64/idat/...")
+                            help="path to IDA executable (ida/ida64/idat/idat64/...)")
         parser.add_argument("inpath",
                             type=str, 
                             help="input path containing files to scan")
         parser.add_argument("outpath",
                             type=str, 
                             help="output path. idb/i64 files and logs will be stored here")
-        parser.add_argument("-i", "--instances", type=int,
+        parser.add_argument("-t", "--threads", type=int,
                             default=3,
                             help="maximum number of concurrent IDA instances (default=3)")
         parser.add_argument("-l", "--loglevel", type=str,
                             default="INFO",
-                            help="log level: DEBUG, INFO (default)")
+                            help="log level: INFO, DEBUG (default: INFO)")
         args = parser.parse_args()
 
         numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -93,8 +117,8 @@ except:
             logging.error("This script must not be run from a path that contains whitespace characters!")
             sys.exit(1)
 
-        process_files(args.idapath, args.inpath, args.outpath, script_path, args.instances)
-
+        process_files(args.idapath, args.inpath, args.outpath, script_path, args.threads)
+        logging.info("Exiting")
         return
 
     run_batch_mode()
@@ -130,7 +154,7 @@ def run_query_02():
         for m in matches:
             logging.info("Match: %s" % m)
     else:
-        logging.warning("Nothing found")
+        logging.info("Nothing found")
 
     logging.info("Query end: 0x3300")
     logging.info("-" * 80)
@@ -158,10 +182,10 @@ def run_query_01():
             for m in matches:
                 logging.info("Match: %s" % m)
         else:
-            logging.warning("No calls resolvable")
+            logging.info("No calls resolvable")
 
     else:
-        logging.warning("No calls resolvable")   
+        logging.info("No calls resolvable")   
     logging.info("Query end: WinHttpSetOption")
     logging.info("-" * 80)
     return True
