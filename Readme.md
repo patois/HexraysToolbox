@@ -13,7 +13,7 @@ can be used to find code patterns within decompiled code:
 - many more, limited (almost) only by the queries you'll come up with ;)
 
 The query shown below can be used to detect CVE-2019-3568 in libwhatsapp.so.
-Find the example script ![here](./locate_cve_2019_3568.py)
+Find the example script ![here](./examples/)
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
 
@@ -149,7 +149,23 @@ from idaapi import *
 from hr_toolbox import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
-### 7) get list of all loop statements from db, display result in chooser
+### 7) get list of loop constructs containing copy operations
+``` python
+from hr_toolbox import ic_t, query_db, find_child_expr
+from ida_hexrays import *
+
+
+find_copy_query = lambda cfunc, i: (i.op is cot_asg and
+                                i.x.op is cot_ptr and
+                                i.y.op is cot_ptr)
+
+find_loop_query = lambda cfunc, i: (is_loop(i.op) and
+                            find_child_expr(cfunc, i, find_copy_query))
+
+
+ic_t(query_db(find_loop_query))
+```
+### 8) get list of all loop statements from db, display result in chooser
 ``` python
 from idaapi import *
 from hr_toolbox import ic_t, query_db
