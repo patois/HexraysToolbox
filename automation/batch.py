@@ -13,7 +13,7 @@ except:
         logging.warning("Ctrl-C pressed. Aborting...")
         return
 
-    def process_files(ida_path, in_path, out_path, script_path, threads):
+    def process_files(ida_path, in_path, out_path, script_path, threads, compress):
         if threads < 1:
             return
 
@@ -35,9 +35,10 @@ except:
                     break
                 f = input_files.pop(0)
                 cur_file += 1
-                cmdline = "%s -o\"%s\" -B -S\"%s\" \"%s\"" % (
+                cmdline = "%s -o\"%s\" -A -c %s -S\"%s\" \"%s\"" % (
                             ida_path,
                             os.path.join(out_path, os.path.basename(f))+".idb",
+                            "-P+" if compress else "",
                             script_path,
                             f)
                 logging.debug("Running %s" % cmdline)
@@ -100,6 +101,8 @@ except:
         parser.add_argument("-l", "--loglevel", type=str,
                             default="INFO",
                             help="log level: INFO, DEBUG (default: INFO)")
+        parser.add_argument("-c", "--compress", action="store_true",
+                            help="compress IDA database")
         args = parser.parse_args()
 
         numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -117,7 +120,7 @@ except:
             logging.error("This script must not be run from a path that contains whitespace characters!")
             sys.exit(1)
 
-        process_files(args.idapath, args.inpath, args.outpath, script_path, args.threads)
+        process_files(args.idapath, args.inpath, args.outpath, script_path, args.threads, args.compress)
         logging.info("Exiting")
         return
 
@@ -198,10 +201,15 @@ def ida_context_main():
         datefmt="%Y-%m-%d %H:%M:%S")
 
     logging.info("=" * 80)
-    logging.info("Processing %s" % get_input_file_path())
-
+    logging.info("Input file: %s" % get_input_file_path())
+    logging.info("IDA database: %s" % get_idb_path())
 
     if init_hexrays_plugin():
+
+        # taken from alysis.idc
+        inf_set_af((inf_get_af() | AF_DODATA | AF_FINAL) & BADADDR)
+        auto_mark_range(0, BADADDR, AU_FINAL)
+
         logging.info("Waiting for disassembly to finish")
         auto_wait()
         logging.info("Done")
