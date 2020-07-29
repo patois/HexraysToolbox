@@ -5,15 +5,27 @@ try:
 except:
     import sys, os, argparse, subprocess, logging, threading, time, signal
 
-    INTERRUPTED = False
+    sigint_count = 0
+    cur_thread_count = 0
 
     def sig_handler(signum, frame):
-        global INTERRUPTED
-        INTERRUPTED = True
-        logging.warning("Ctrl-C pressed. Aborting...")
+        global sigint_count
+        global cur_thread_count
+
+        msg = "SIGINT: "
+        if not sigint_count:
+            logging.warning("%saborting..." % msg)
+        else:
+            if sigint_count > 2:
+                logging.error("DUDE WHY DON'T YOU JUST CHILL!?!?")
+            logging.warning("%sI am alive and waiting for %d IDA instances to finish" % (msg, cur_thread_count))
+
+        sigint_count += 1
         return
 
     def process_files(ida_path, in_path, out_path, script_path, threads, compress):
+        global cur_thread_count
+
         if threads < 1:
             return
 
@@ -26,11 +38,15 @@ except:
         cur_file = 0
 
         logging.info("Starting to process %d files (max %d concurrent threads)" % (total_files, threads))
-        event = threading.Event()
+
+        lock = threading.Lock()
+        thread_exit_evt = threading.Event()       
         signal.signal(signal.SIGINT, sig_handler)
 
-        while len(input_files):
-            while threading.active_count() <= threads:
+        while not sigint_count and len(input_files):
+            with lock:
+                n = cur_thread_count
+            while n < threads:
                 if not len(input_files):
                     break
                 f = input_files.pop(0)
@@ -47,37 +63,46 @@ except:
                                                                             cur_file,
                                                                             total_files,
                                                                             f))
-                ida_instance(cmdline, event).start()
+                with lock:
+                    cur_thread_count += 1
+                ida_instance(cmdline, thread_exit_evt, lock).start()
+                with lock:
+                    n = cur_thread_count
 
             logging.debug("Threshold reached / no more files in queue. Waiting...")
-            event.wait()
-            event.clear()
+            while not sigint_count and not thread_exit_evt.wait(1.0):
+                pass
+            thread_exit_evt.clear()
 
-            if INTERRUPTED:
-                # empty list
-                input_files = list()
-                logging.warning("Interrupted. Waiting for %d remaining instances to finish" % (threading.active_count()-1))
+        with lock:
+            n = cur_thread_count
 
-        count = threading.active_count()
-        while count > 1:
-            logging.debug(threading.enumerate())
-            logging.info("Waiting for %d more IDA instances to finish" % (count-1))
-            event.wait()
-            event.clear()
-            count = threading.active_count()
+        while n > 0:
+            logging.info("Waiting for %d more IDA instances to finish" % (n))
+            while not thread_exit_evt.wait(1):
+                pass
+            thread_exit_evt.clear()
+            with lock:
+                n = cur_thread_count
+
         return
 
     class ida_instance(threading.Thread):
-        def __init__(self, cmdline, event):
+        def __init__(self, cmdline, thread_exit_evt, lock):
             threading.Thread.__init__(self)
             self.cmdline = cmdline
-            self.event = event
+            self.thread_exit_evt = thread_exit_evt
+            self.lock = lock
             return
 
         def run_ida_instance(self):
+            global cur_thread_count
+
             cp = subprocess.run(self.cmdline)
             logging.debug("IDA instance terminated (exit code %d)" % (cp.returncode))
-            self.event.set()
+            with self.lock:
+                cur_thread_count -= 1
+            self.thread_exit_evt.set()
             return cp.returncode
 
         def run(self):
