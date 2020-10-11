@@ -56,7 +56,7 @@ Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) p
 
 ## Examples:
 
-### 1) get list of expressions that compare anything to zero ("x == 0")
+### - get list of expressions that compare anything to zero ("x == 0")
 ```
          cot_eq
          /   \
@@ -71,7 +71,7 @@ r = [e for e in find_expr(here(), query)]
 for e in r:
     print(e)
 ```
-### 2) get list of function calls
+### - get list of function calls
 ```
         cot_call
          / 
@@ -86,7 +86,8 @@ r = [e for e in find_expr(here(), query)]
 for e in r:
     print(e)
 ```
-### 3) print list of memcpy calls where "dst" argument is on stack
+![list of calls ](./rsrc/calls.png?raw=true)
+### - print list of memcpy calls where "dst" argument is on stack
 ```
         cot_call --- arg1 is cot_var
          /           arg1 is on stack
@@ -108,7 +109,7 @@ for ea in Functions():
 for e in r:
     print(e)
 ```
-### 4) get list of calls to sprintf(str, fmt, ...) where fmt contains "%s"
+### - get list of calls to sprintf(str, fmt, ...) where fmt contains "%s"
 ```
         cot_call --- arg2 ('fmt') contains '%s'
          /
@@ -131,7 +132,7 @@ for ea in Functions():
 for e in r:
     print(e)
 ```
-### 5) get list of signed operators, display result in chooser
+### - get list of signed operators, display result in chooser
 ``` python
 from idaapi import *
 from hr_toolbox import ic_t
@@ -143,13 +144,22 @@ query = lambda cfunc, e: (e.op in
             hr.cot_sdiv, hr.cot_smod])
 ic_t(query)
 ```
-### 6) get list of "if" statements, display result in chooser
+![list of signed operators](./rsrc/signed_ops.png?raw=true)
+### - get list of "if" statements, display result in chooser
 ``` python
 from idaapi import *
 from hr_toolbox import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
-### 7) get list of loop constructs containing copy operations
+![list of if statements](./rsrc/if_stmt.png?raw=true)
+### - get list of all loop statements in db, display result in chooser
+``` python
+from idaapi import *
+from hr_toolbox import ic_t, query_db
+ic_t(query_db(lambda cf,i: is_loop(i.op)))
+```
+![list of loops](./rsrc/loops.png?raw=true)
+### - get list of loop constructs containing copy operations
 ``` python
 from hr_toolbox import ic_t, query_db, find_child_expr
 from ida_hexrays import *
@@ -165,10 +175,4 @@ find_loop_query = lambda cfunc, i: (is_loop(i.op) and
 
 ic_t(query_db(find_loop_query))
 ```
-### 8) get list of all loop statements from db, display result in chooser
-``` python
-from idaapi import *
-from hr_toolbox import ic_t, query_db
-ic_t(query_db(lambda cf,i: is_loop(i.op)))
-```
-![loops detected](./rsrc/loops.png?raw=true)
+![list of copy loops](./rsrc/copy_loop.png?raw=true)
