@@ -67,6 +67,7 @@ def find_item(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
+    cfunc = None
     try:
         f = ida_funcs.get_func(ea)
         if f:
@@ -133,6 +134,7 @@ def find_expr(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
+    cfunc = None
     try:
         f = ida_funcs.get_func(ea)
         if f:
