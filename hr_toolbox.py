@@ -5,9 +5,10 @@ import ida_kernwin
 import ida_lines
 import ida_funcs
 import idc
-from ida_idaapi import __EA64__
+from ida_idaapi import __EA64__, BADADDR
 
 __author__ = "Dennis Elser @ https://github.com/patois"
+SCRIPT_NAME = "[toolbox]"
 
 """
 Hexrays Toolbox - IDAPython plugin for finding code patterns using Hexrays
@@ -47,15 +48,21 @@ Todo:
 
 # ----------------------------------------------------------------------------
 class tb_result_t():
-    def __init__(self, i):
-        self.ea = i.ea
-        self.v = ida_lines.tag_remove(i.print1(None))
+    def __init__(self, i=None):
+        if isinstance(i, (hr.cexpr_t, hr.cinsn_t)):
+            self.ea = i.ea
+            self.v = ida_lines.tag_remove(i.print1(None))
+        elif isinstance(i, tuple):
+            self.ea, self.v = i
+        else:
+            self.ea = BADADDR
+            self.v = "<undefined>"
 
     def __str__(self):
         return "%x: %s" % (self.ea, self.v)
 
 # ----------------------------------------------------------------------------
-def find_item(ea, q, parents=False):
+def find_item(ea, q, parents=False, flags=0):
     """find item within AST of decompiled function
 
     arguments:
@@ -67,17 +74,19 @@ def find_item(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
-    cfunc = None
-    try:
-        f = ida_funcs.get_func(ea)
-        if f:
-            cfunc = hr.decompile(f)
-    except:
-        print("%x: unable to decompile." % ea)
-        return list()
+    f = ida_funcs.get_func(ea)
+    if f:
+        cfunc = None
+        hf = hr.hexrays_failure_t()
+        try:
+            cfunc = hr.decompile(f, hf, flags)
+        except Exception as e:
+            print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
+            print("\t (%s)" % e)
+            return list()
 
-    if cfunc:
-        return find_child_item(cfunc, cfunc.body, q, parents)
+        if cfunc:
+            return find_child_item(cfunc, cfunc.body, q, parents)
     return list()
 
 # ----------------------------------------------------------------------------
@@ -122,7 +131,7 @@ def find_child_item(cfunc, i, q, parents=False):
     return list()
 
 # ----------------------------------------------------------------------------
-def find_expr(ea, q, parents=False):
+def find_expr(ea, q, parents=False, flags=0):
     """find expression within AST of decompiled function
     
     arguments:
@@ -134,17 +143,19 @@ def find_expr(ea, q, parents=False):
     returns list of tb_result_t objects
     """
 
-    cfunc = None
-    try:
-        f = ida_funcs.get_func(ea)
-        if f:
-            cfunc = hr.decompile(f)
-    except:
-        print("%x: unable to decompile." % ea)
-        return list()
+    f = ida_funcs.get_func(ea)
+    if f:
+        cfunc = None
+        hf = hr.hexrays_failure_t()
+        try:
+            cfunc = hr.decompile(f, hf, flags)
+        except Exception as e:
+            print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
+            print("\t (%s)" % e)
+            return list()
 
-    if cfunc:
-        return find_child_expr(cfunc, cfunc.body, q, parents)
+        if cfunc:
+            return find_child_expr(cfunc, cfunc.body, q, parents)
     return list()
 
 # ----------------------------------------------------------------------------
@@ -254,13 +265,36 @@ class ic_t(ida_kernwin.Choose):
     query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
     """
+    window_title = "Hexrays Toolbox"
 
-    def __init__(self, q, ea_list=None, query_full=True,
+    def __init__(self,
+            q=None,
+            ea_list=None,
+            query_full=True,
             flags=ida_kernwin.CH_RESTORE | ida_kernwin.CH_QFLT,
-            width=None, height=None, embedded=False, modal=False):
+            title=None,
+            width=None,
+            height=None,
+            embedded=False,
+            modal=False):
+        
+        _title = ""
+        i = 0
+        idx = ""
+        pfx = ""
+        exists = True
+        while exists:
+            idx = chr(ord('A')+i%26)
+            _title = "%s-%s%s" % (ic_t.window_title, pfx, idx)
+            if title:
+                _title += ": %s" % title
+            exists = (ida_kernwin.find_widget(_title) != None)
+            i += 1
+            pfx += "" if i % 26 else "A"
+
         ida_kernwin.Choose.__init__(
             self,
-            "Hexrays Toolbox",
+            _title,
             [ ["Address", 10 | ida_kernwin.CHCOL_EA],
               ["Function", 20 | ida_kernwin.CHCOL_FNAME],
               ["Output", 80 | ida_kernwin.CHCOL_PLAIN]],
@@ -268,7 +302,7 @@ class ic_t(ida_kernwin.Choose):
             width = width,
             height = height,
             embedded = embedded)
-
+        
         if ea_list is None:
             ea_list =[ida_kernwin.get_screen_ea()]
         if callable(q):
@@ -292,12 +326,13 @@ class ic_t(ida_kernwin.Choose):
     def OnGetSize(self):
         return len(self.items)
 
-    """
     def append(self, data):
+        if not isinstance(data, tb_result_t):
+            return False
         self.items.append(data)
         self.Refresh()
-        return
-    """
+        return True
+
     def set_data(self, data):
         self.items = data
         self.Refresh()
