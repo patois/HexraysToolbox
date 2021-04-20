@@ -8,7 +8,7 @@ import idc
 from ida_idaapi import __EA64__, BADADDR
 
 __author__ = "Dennis Elser @ https://github.com/patois"
-SCRIPT_NAME = "[toolbox]"
+SCRIPT_NAME = "[hxtb]"
 
 """
 Hexrays Toolbox - IDAPython plugin for finding code patterns using Hexrays
@@ -48,7 +48,8 @@ Todo:
 
 # ----------------------------------------------------------------------------
 class query_result_t():
-    def __init__(self, i=None):
+    def __init__(self, entry_ea=BADADDR, i=None):
+        self.entry = entry_ea
         if isinstance(i, (hx.cexpr_t, hx.cinsn_t)):
             self.ea = i.ea
             self.v = ida_lines.tag_remove(i.print1(None))
@@ -59,7 +60,7 @@ class query_result_t():
             self.v = "<undefined>"
 
     def __str__(self):
-        return "%x: %s" % (self.ea, self.v)
+        return "[%x] %x: \"%s\"" % (self.entry, self.ea, self.v)
 
 # ----------------------------------------------------------------------------
 def find_item(ea, q, parents=False, flags=0):
@@ -115,7 +116,7 @@ def find_child_item(cfunc, i, q, parents=False):
             """process cinsn_t and cexpr_t elements alike"""
 
             if self.query(self.cfunc, i):
-                self.found.append(query_result_t(i))
+                self.found.append(query_result_t(self.cfunc.entry_ea, i))
             return 0
 
         def visit_insn(self, i):
@@ -184,7 +185,7 @@ def find_child_expr(cfunc, e, q, parents=False):
             """process cexpr_t elements"""
 
             if self.query(self.cfunc, e):
-                self.found.append(query_result_t(e))
+                self.found.append(query_result_t(self.cfunc.entry_ea, e))
             return 0
 
     if cfunc:
@@ -211,7 +212,7 @@ def exec_query(q, ea_list, query_full):
     find_elem = find_item if query_full else find_expr
     result = list()
     for ea in ea_list:
-        result += [e for e in find_elem(ea, q)]
+        result += find_elem(ea, q)
     return result
 
 # ----------------------------------------------------------------------------
@@ -249,7 +250,7 @@ def query(q, ea_list=None, query_full=True, do_print=False):
         if do_print:
             print("<query> done! %d unique hits." % len(r))
             for e in r:
-                print("%x: %s" % (e.ea, e.v))
+                print(e)
     except Exception as exc:
         print("<query> error:", exc)
     return r
@@ -295,8 +296,8 @@ class ic_t(ida_kernwin.Choose):
         ida_kernwin.Choose.__init__(
             self,
             _title,
-            [ ["Address", 10 | ida_kernwin.CHCOL_EA],
-              ["Function", 20 | ida_kernwin.CHCOL_FNAME],
+            [ ["Function", 20 | ida_kernwin.CHCOL_FNAME],
+              ["Address", 10 | ida_kernwin.CHCOL_EA],
               ["Output", 80 | ida_kernwin.CHCOL_PLAIN]],
             flags = flags,
             width = width,
@@ -311,14 +312,16 @@ class ic_t(ida_kernwin.Choose):
             self.items = q
         else:
             self.items = list()
-
         self.Show()
 
     def OnClose(self):
         self.items = []
 
     def OnSelectLine(self, n):
-        ida_kernwin.jumpto(self.items[n].ea)
+        item_ea = self.items[n].ea
+        func_ea = self.items[n].entry
+        ea = func_ea if item_ea == BADADDR else item_ea
+        ida_kernwin.jumpto(ea)
 
     def OnGetLine(self, n):
         return self._make_choser_entry(n)
@@ -341,6 +344,6 @@ class ic_t(ida_kernwin.Choose):
         return self.items
 
     def _make_choser_entry(self, n):
-        return ["%016x" % self.items[n].ea if __EA64__ else "%08x" % self.items[n].ea,
-                "%s" % idc.get_func_off_str(self.items[n].ea),
+        return ["%s" % idc.get_func_off_str(self.items[n].entry),
+                "%016x" % self.items[n].ea if __EA64__ else "%08x" % self.items[n].ea,
                 self.items[n].v]
