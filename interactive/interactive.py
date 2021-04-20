@@ -1,4 +1,4 @@
-import hr_toolbox as tb
+import hxtb
 from idaapi import *
 
 __author__ = "https://github.com/patois"
@@ -15,7 +15,7 @@ def fc(func_name, fuzzy=False):
             e.x.op is cot_obj and
             name in get_name(e.x.obj_ea).lower())
         
-        return tb.exec_query(query, Functions(), False)
+        return hxtb.exec_query(query, Functions(), False)
 
     # else...
     ea = get_name_ea(BADADDR, func_name)
@@ -24,7 +24,7 @@ def fc(func_name, fuzzy=False):
             e.x.op is cot_obj and
             get_name(e.x.obj_ea) == func_name)
 
-        return tb.exec_query(query, list(set(CodeRefsTo(ea, True))), False)
+        return hxtb.exec_query(query, list(set(CodeRefsTo(ea, True))), False)
     
     return list()
 
@@ -42,7 +42,7 @@ def find_memcpy():
         e.a[2].op is cot_var and
         cf.lvars[e.a[2].v.idx].tif.is_signed())
 
-    return tb.exec_query(query, Functions(), False)
+    return hxtb.exec_query(query, Functions(), False)
 
 # ----------------------------------------------------------------------------
 def find_sprintf():
@@ -62,7 +62,7 @@ def find_sprintf():
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
-    return tb.exec_query(query, ea_set, False)
+    return hxtb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def find_malloc():
@@ -81,7 +81,7 @@ def find_malloc():
     ea_malloc = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(ea_malloc, XREF_FAR)] if f])
     
-    return tb.exec_query(query, ea_set, False)
+    return hxtb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def find_gpa():
@@ -101,7 +101,7 @@ def find_gpa():
     gpa = get_name_ea_simple(func_name)
     ea_set = set([f.start_ea for f in [get_func(xref.frm) for xref in XrefsTo(gpa, XREF_FAR)] if f])
     
-    return tb.exec_query(query, ea_set, False)
+    return hxtb.exec_query(query, ea_set, False)
 
 # ----------------------------------------------------------------------------
 def menu():

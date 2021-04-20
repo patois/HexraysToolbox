@@ -1,5 +1,5 @@
 from idaapi import *
-from hr_toolbox import query
+from hxtb import query
 
 def locate_CVE_2019_3568():
     """Example query:

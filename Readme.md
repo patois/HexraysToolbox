@@ -17,7 +17,7 @@ Find the example script ![here](./examples/)
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
 
-Loading hr_toolbox.py with IDA (alt-f7) will make
+Loading hxtb.py with IDA (alt-f7) will make
 available the "find_expr()" and "find_item()" functions
 to the IDAPython CLI and the script interpreter (shift-f2).
 
@@ -33,20 +33,20 @@ to the IDAPython CLI and the script interpreter (shift-f2).
                     1. cfunc: cfunc_t
                     2. i/e:   cinsn_t/cexpr_t
     Returns:
-        list of tb_result_t objects
+        list of query_result_t objects
 
     Example:
         find_expr(here(), lambda cf, e: e.op is cot_call)
     
         -> finds and returns all function calls within a current function.
-        The returned data is a list of tb_result_t objects (see hr_toolbox.py).
+        The returned data is a list of query_result_t objects (see hxtb.py).
 
         The returned list can be passed to an instance of the ic_t class,
         which causes the data to be displayed by a chooser as follows:
 
         from idaapi import *
-        import hr_toolbox as tb
-        tb.ic_t(find_expr(here(), lambda cf,e:e.op is cot_call))
+        import hxtb
+        hxtb.ic_t(find_expr(here(), lambda cf,e:e.op is cot_call))
 
 
     Please find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
@@ -65,7 +65,7 @@ Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) p
 ```
 ``` python
 from idaapi import *
-from hr_toolbox import find_expr
+from hxtb import find_expr
 query = lambda cfunc, e: e.op is cot_eq and e.y.op is cot_num and e.y.numval() == 0
 r = [e for e in find_expr(here(), query)]
 for e in r:
@@ -80,7 +80,7 @@ for e in r:
 ```
 ``` python
 from idaapi import *
-from hr_toolbox import find_expr
+from hxtb import find_expr
 query = lambda cfunc, e: e.op is cot_call and e.x.op is cot_obj
 r = [e for e in find_expr(here(), query)]
 for e in r:
@@ -96,7 +96,7 @@ for e in r:
 ```
 ``` python
 from idaapi import *
-from hr_toolbox import find_expr
+from hxtb import find_expr
 r = []
 query = lambda cfunc, e: (e.op is cot_call and
            e.x.op is cot_obj and
@@ -118,7 +118,7 @@ for e in r:
 ```
 ``` python
 from idaapi import *
-from hr_toolbox import find_expr
+from hxtb import find_expr
 r = []
 query = lambda cfunc, e: (e.op is cot_call and
     e.x.op is cot_obj and
@@ -135,7 +135,7 @@ for e in r:
 ### - get list of signed operators, display result in chooser
 ``` python
 from idaapi import *
-from hr_toolbox import ic_t
+from hxtb import ic_t
 query = lambda cfunc, e: (e.op in
             [hr.cot_asgsshr, hr.cot_asgsdiv,
             hr.cot_asgsmod, hr.cot_sge,
@@ -148,20 +148,20 @@ ic_t(query)
 ### - get list of "if" statements, display result in chooser
 ``` python
 from idaapi import *
-from hr_toolbox import ic_t
+from hxtb import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
 ![list of if statements](./rsrc/if_stmt.png?raw=true)
 ### - get list of all loop statements in db, display result in chooser
 ``` python
 from idaapi import *
-from hr_toolbox import ic_t, query_db
+from hxtb import ic_t, query_db
 ic_t(query_db(lambda cf,i: is_loop(i.op)))
 ```
 ![list of loops](./rsrc/loops.png?raw=true)
 ### - get list of loop constructs containing copy operations
 ``` python
-from hr_toolbox import ic_t, query_db, find_child_expr
+from hxtb import ic_t, query_db, find_child_expr
 from ida_hexrays import *
 
 

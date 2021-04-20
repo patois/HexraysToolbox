@@ -154,7 +154,7 @@ except:
 
 
 # IDAPython specific code starts here
-import hr_toolbox as tb
+import hxtb
 import logging
 
 def get_callers_to(func_name):
@@ -176,7 +176,7 @@ def run_query_02():
     q = lambda func, item: (item.op is cot_num and 
                             item.numval() == 0x3300)
 
-    matches = tb.query_db(q)
+    matches = hxtb.query_db(q)
 
     if len(matches):
         for m in matches:
@@ -204,7 +204,7 @@ def run_query_01():
                                 get_name(item.x.obj_ea) == "WinHttpSetOption" and
                                 item.a[1].op is cot_num and
                                 item.a[1].numval() & 0x1f == 0x1f)
-        matches = tb.query(q, ea_list=callsites)
+        matches = hxtb.query(q, ea_list=callsites)
 
         if len(matches):
             for m in matches:

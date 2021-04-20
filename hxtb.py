@@ -1,4 +1,4 @@
-import ida_hexrays as hr
+import ida_hexrays as hx
 import ida_bytes
 import idautils
 import ida_kernwin
@@ -47,9 +47,9 @@ Todo:
 """
 
 # ----------------------------------------------------------------------------
-class tb_result_t():
+class query_result_t():
     def __init__(self, i=None):
-        if isinstance(i, (hr.cexpr_t, hr.cinsn_t)):
+        if isinstance(i, (hx.cexpr_t, hx.cinsn_t)):
             self.ea = i.ea
             self.v = ida_lines.tag_remove(i.print1(None))
         elif isinstance(i, tuple):
@@ -71,15 +71,15 @@ def find_item(ea, q, parents=False, flags=0):
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
     f = ida_funcs.get_func(ea)
     if f:
         cfunc = None
-        hf = hr.hexrays_failure_t()
+        hf = hx.hexrays_failure_t()
         try:
-            cfunc = hr.decompile(f, hf, flags)
+            cfunc = hx.decompile(f, hf, flags)
         except Exception as e:
             print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
             print("\t (%s)" % e)
@@ -98,13 +98,13 @@ def find_child_item(cfunc, i, q, parents=False):
     i:          citem_t
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
-    class citem_finder_t(hr.ctree_visitor_t):
+    class citem_finder_t(hx.ctree_visitor_t):
         def __init__(self, cfunc, q, parents):
-            hr.ctree_visitor_t.__init__(self,
-                hr.CV_PARENTS if parents else hr.CV_FAST)
+            hx.ctree_visitor_t.__init__(self,
+                hx.CV_PARENTS if parents else hx.CV_FAST)
 
             self.cfunc = cfunc
             self.query = q
@@ -115,7 +115,7 @@ def find_child_item(cfunc, i, q, parents=False):
             """process cinsn_t and cexpr_t elements alike"""
 
             if self.query(self.cfunc, i):
-                self.found.append(tb_result_t(i))
+                self.found.append(query_result_t(i))
             return 0
 
         def visit_insn(self, i):
@@ -140,15 +140,15 @@ def find_expr(ea, q, parents=False, flags=0):
     parents:    False -> discard cexpr_t parent nodes
                 True  -> maintain citem_t parent nodes
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
     f = ida_funcs.get_func(ea)
     if f:
         cfunc = None
-        hf = hr.hexrays_failure_t()
+        hf = hx.hexrays_failure_t()
         try:
-            cfunc = hr.decompile(f, hf, flags)
+            cfunc = hx.decompile(f, hf, flags)
         except Exception as e:
             print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
             print("\t (%s)" % e)
@@ -167,13 +167,13 @@ def find_child_expr(cfunc, e, q, parents=False):
     e:          cexpr_t
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
-    class expr_finder_t(hr.ctree_visitor_t):
+    class expr_finder_t(hx.ctree_visitor_t):
         def __init__(self, cfunc, q, parents):
-            hr.ctree_visitor_t.__init__(self,
-                hr.CV_PARENTS if parents else hr.CV_FAST)
+            hx.ctree_visitor_t.__init__(self,
+                hx.CV_PARENTS if parents else hx.CV_FAST)
 
             self.cfunc = cfunc
             self.query = q
@@ -184,7 +184,7 @@ def find_child_expr(cfunc, e, q, parents=False):
             """process cexpr_t elements"""
 
             if self.query(self.cfunc, e):
-                self.found.append(tb_result_t(e))
+                self.found.append(query_result_t(e))
             return 0
 
     if cfunc:
@@ -205,7 +205,7 @@ def exec_query(q, ea_list, query_full):
     query_full: False -> find cexpr_t only (faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
     find_elem = find_item if query_full else find_expr
@@ -223,7 +223,7 @@ def query_db(q, query_full=True, do_print=False):
     query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
     return query(q, ea_list=idautils.Functions(), query_full=query_full, do_print=do_print)
@@ -238,7 +238,7 @@ def query(q, ea_list=None, query_full=True, do_print=False):
     query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
 
-    returns list of tb_result_t objects
+    returns list of query_result_t objects
     """
 
     if not ea_list:
@@ -260,7 +260,7 @@ class ic_t(ida_kernwin.Choose):
 
     arguments:
     q:          lambda/function: f(cfunc_t, citem_t) returning a bool
-                or list of tb_result_t objects
+                or list of query_result_t objects
     ea_list:    iterable of addresses/functions to process
     query_full: False -> find cexpr_t only (default - faster but doesn't find cinsn_t items)
                 True  -> find citem_t elements, which includes cexpr_t and cinsn_t
@@ -327,7 +327,7 @@ class ic_t(ida_kernwin.Choose):
         return len(self.items)
 
     def append(self, data):
-        if not isinstance(data, tb_result_t):
+        if not isinstance(data, query_result_t):
             return False
         self.items.append(data)
         self.Refresh()
@@ -336,6 +336,9 @@ class ic_t(ida_kernwin.Choose):
     def set_data(self, data):
         self.items = data
         self.Refresh()
+
+    def get_data(self):
+        return self.items
 
     def _make_choser_entry(self, n):
         return ["%016x" % self.items[n].ea if __EA64__ else "%08x" % self.items[n].ea,
