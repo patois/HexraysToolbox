@@ -48,16 +48,29 @@ Todo:
 
 # ----------------------------------------------------------------------------
 class query_result_t():
-    def __init__(self, entry_ea=BADADDR, i=None):
-        self.entry = entry_ea
+    def __init__(self, cfunc=None, i=None):
+        if isinstance(cfunc, hx.cfuncptr_t):
+            self.entry = cfunc.entry_ea
+        elif isinstance(cfunc, int):
+            self.entry = cfunc
+        else:
+            self.entry = BADADDR
         if isinstance(i, (hx.cexpr_t, hx.cinsn_t)):
-            self.ea = i.ea
+            self.ea = self.find_closest_address(cfunc, i) if isinstance(cfunc, hx.cfuncptr_t) else i.ea
             self.v = ida_lines.tag_remove(i.print1(None))
         elif isinstance(i, tuple):
             self.ea, self.v = i
         else:
             self.ea = BADADDR
             self.v = "<undefined>"
+
+    def find_closest_address(self, cfunc, i):
+        parent = i
+        while parent:
+            if parent and parent.ea != BADADDR:
+                return parent.ea
+            parent = cfunc.body.find_parent_of(parent)
+        return BADADDR
 
     def __str__(self):
         return "[%x] %x: \"%s\"" % (self.entry, self.ea, self.v)
@@ -116,7 +129,7 @@ def find_child_item(cfunc, i, q, parents=False):
             """process cinsn_t and cexpr_t elements alike"""
 
             if self.query(self.cfunc, i):
-                self.found.append(query_result_t(self.cfunc.entry_ea, i))
+                self.found.append(query_result_t(self.cfunc, i))
             return 0
 
         def visit_insn(self, i):
@@ -185,7 +198,7 @@ def find_child_expr(cfunc, e, q, parents=False):
             """process cexpr_t elements"""
 
             if self.query(self.cfunc, e):
-                self.found.append(query_result_t(self.cfunc.entry_ea, e))
+                self.found.append(query_result_t(self.cfunc, e))
             return 0
 
     if cfunc:
