@@ -195,7 +195,7 @@ def find_child_expr(cfunc, e, q, parents=False):
     return list()
 
 # ----------------------------------------------------------------------------
-def exec_query(q, ea_list, query_full):
+def exec_query(q, ea_list, query_full, flags=0):
     """run query on list of addresses
 
     convenience wrapper function around find_item()
@@ -212,7 +212,7 @@ def exec_query(q, ea_list, query_full):
     find_elem = find_item if query_full else find_expr
     result = list()
     for ea in ea_list:
-        result += find_elem(ea, q)
+        result += find_elem(ea, q, flags=flags)
     return result
 
 # ----------------------------------------------------------------------------
