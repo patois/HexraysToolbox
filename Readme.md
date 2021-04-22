@@ -125,7 +125,7 @@ query = lambda cfunc, e: (e.op is cot_call and
     get_name(e.x.obj_ea) == 'sprintf' and
     len(e.a) >= 2 and
     e.a[1].op is cot_obj and
-    is_strlit(get_flags(e.a[1].obj_ea)) and
+    is_strlit(get_flags(get_item_head(e.a[1].obj_ea))) and
     b'%s' in get_strlit_contents(e.a[1].obj_ea, -1, 0, STRCONV_ESCAPE))
 for ea in Functions():
     r += find_expr(ea, query)
