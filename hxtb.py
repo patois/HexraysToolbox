@@ -56,7 +56,7 @@ class query_result_t():
         else:
             self.entry = BADADDR
         if isinstance(i, (hx.cexpr_t, hx.cinsn_t)):
-            self.ea = self.find_closest_address(cfunc, i) if isinstance(cfunc, hx.cfuncptr_t) else i.ea
+            self.ea = i.ea if not isinstance(cfunc, hx.cfuncptr_t) else self.find_closest_address(cfunc, i)
             self.v = ida_lines.tag_remove(i.print1(None))
         elif isinstance(i, tuple):
             self.ea, self.v = i
@@ -208,7 +208,7 @@ def find_child_expr(cfunc, e, q, parents=False):
     return list()
 
 # ----------------------------------------------------------------------------
-def exec_query(q, ea_list, query_full, flags=0):
+def exec_query(q, ea_list, query_full, parents=False, flags=0):
     """run query on list of addresses
 
     convenience wrapper function around find_item()
@@ -225,7 +225,7 @@ def exec_query(q, ea_list, query_full, flags=0):
     find_elem = find_item if query_full else find_expr
     result = list()
     for ea in ea_list:
-        result += find_elem(ea, q, flags=flags)
+        result += find_elem(ea, q, parents=parents, flags=flags)
     return result
 
 # ----------------------------------------------------------------------------
