@@ -5,7 +5,7 @@ import json
 import os
 from types import FunctionType
 
-# hxtbshell - A graphical frontend for Hexrays Toolbox
+# hxtb-shell - A graphical frontend for Hexrays Toolbox
 # URL: https://github.com/patois/HexraysToolbox
 
 __author__ = "@pat0is"
@@ -102,7 +102,7 @@ class QueryForm(idaapi.Form):
 BUTTON YES NONE
 BUTTON NO NONE
 BUTTON CANCEL NONE
-hxtb shell
+%s
 <##New:{btn_new}><##Load:{btn_load}><##Save as...:{btn_save}>
 
 <:{str_help}>
@@ -120,7 +120,7 @@ hxtb shell
 <Defined by query:{rScopeQuery}>{rad_qscope}>     
 
 <##Run Query:{btn_runq}>
-"""
+""" % SCRIPT_NAME
         self._qs = QuerySettings()
         s = self._get_settings()
 
@@ -222,6 +222,7 @@ hxtb shell
             # otherwise it is a lambda expression
             else:
                 run_query(qo, ea_list, settings)
+        return
 
     def _handle_btn_new(self):
         # apply empty settings
