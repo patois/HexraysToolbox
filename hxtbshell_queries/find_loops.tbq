@@ -1,0 +1,1 @@
+{"version": 1.0, "query": "idaapi.is_loop(i.op)", "query_type": 1, "ast_type": 1, "help": "find loops", "scope": 0}

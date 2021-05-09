@@ -1,0 +1,1 @@
+{"version": 1.0, "query": "(i.op is idaapi.cot_call and\ni.x.op is idaapi.cot_obj and\nany(s in get_name(i.x.obj_ea) for s in ['memcpy', 'memmove']) and\nlen(i.a) == 3 and\ni.a[0].op is idaapi.cot_var and\nf.lvars[i.a[0].v.idx].is_stk_var())", "query_type": 1, "ast_type": 0, "help": "Finds memcpy/memmove calls with dst on stack", "scope": 0}

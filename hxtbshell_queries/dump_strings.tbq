@@ -1,0 +1,1 @@
+{"version": 1.0, "query": "i.op is idaapi.cot_obj and idaapi.is_strlit(idaapi.get_flags(i.obj_ea))", "query_type": 1, "ast_type": 0, "help": "show strings used by current function", "scope": 1}
