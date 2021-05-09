@@ -1,1 +1,0 @@
-{"version": 1.0, "query": "i.op is idaapi.cot_call", "query_type": 1, "ast_type": 0, "help": "show function calls and their arguments", "scope": 2}
