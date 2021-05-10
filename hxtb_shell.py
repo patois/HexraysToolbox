@@ -36,18 +36,30 @@ def run_query(qf, ea_list, qs):
     return ch
 
 def compile_code(s):
+    def wrap_lambda(lexpr):
+        return """class LambdaMatcher(hxtb.query_object_t):
+    def __init__(self):
+        pass
+    def init(self):
+        return True
+    def run(self, f, i):
+        return %s
+    def exit(self):
+        return
+return LambdaMatcher()""" % lexpr
+
     qo = None
+    wl = s.query
+    if s.query_type == 1:
+        wl = wrap_lambda(wl)
     try:
-        if s.query_type == 0:
-            global ___hxtbshell_dynfunc_code___
-            q = "\t"+"\t".join(s.query.splitlines(True))
-            foo_code = compile('def ___hxtbshell_dynfunc___():\n%s' % q, "hxtb-shell dyncode", "exec")
-            ___hxtbshell_dynfunc_code___ = FunctionType(foo_code.co_consts[0], globals(), "___hxtbshell_dynfunc___")
-            hack = eval("lambda: ___hxtbshell_dynfunc_code___()")
-            #instantiate
-            qo = hack()
-        else:
-            qo = eval("lambda f, i: %s" % s.query)
+        global ___hxtbshell_dynfunc_code___
+        q = "\t"+"\t".join(wl.splitlines(True))
+        foo_code = compile('def ___hxtbshell_dynfunc___():\n%s' % q, "hxtb-shell dyncode", "exec")
+        ___hxtbshell_dynfunc_code___ = FunctionType(foo_code.co_consts[0], globals(), "___hxtbshell_dynfunc___")
+        hack = eval("lambda: ___hxtbshell_dynfunc_code___()")
+        #instantiate
+        qo = hack()
     except Exception as e:
         print(e)
     return qo
@@ -211,23 +223,18 @@ BUTTON CANCEL NONE
                 idaapi.warning("%s: invalid scope!" % SCRIPT_NAME)
                 return
 
-            # if the query is a function
-            if settings.query_type == 0:
-                if not len(ea_list):
-                    idaapi.warning("%s: empty scope!" % SCRIPT_NAME)
-                    return
-                # call init() and check whether it is ok to run this query
-                if qo.init():
-                    """run query on 'ea_list'
-                    on a side note: passing an object's method as an argument to hxtb
-                    is probably(?) a bad idea and I surely do not know how it works
-                    under the hood but it seems to work for the time being."""
-                    run_query(qo.run, ea_list, settings)
-                    # call cleanup/exit function
-                    qo.exit()
-            # otherwise it is a lambda expression
-            else:
-                run_query(qo, ea_list, settings)
+            if not len(ea_list):
+                idaapi.warning("%s: empty scope!" % SCRIPT_NAME)
+                return
+            # call init() and check whether it is ok to run this query
+            if qo.init():
+                """run query on 'ea_list'
+                on a side note: passing an object's method as an argument to hxtb
+                is probably(?) a bad idea and I surely do not know how it works
+                under the hood but it seems to work for the time being."""
+                run_query(qo.run, ea_list, settings)
+                # call cleanup/exit function
+                qo.exit()
         return
 
     def _handle_btn_new(self):

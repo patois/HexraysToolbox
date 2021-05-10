@@ -47,7 +47,7 @@ Todo:
 """
 
 # ----------------------------------------------------------------------------
-class query_function_t():
+class query_object_t():
     """function queries (as used by hxtb-shell) inerhit from this class
     and should override the following methods"""
     def __init__(self):
@@ -59,9 +59,12 @@ class query_function_t():
         run or not (return True or False)"""
         return False
 
-    def run(self):
-        """implement query here"""
-        return
+    def run(self, cfunc, citem):
+        """implement query here
+        return:
+           True: pattern match
+           False: pattern mismatch"""
+        return False
 
     def exit(self):
         """cleanup work etc..."""
