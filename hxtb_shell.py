@@ -215,7 +215,13 @@ BUTTON CANCEL NONE
             if settings.query_type == 0:
                 # call init() and check whether it is ok to run this query
                 if qo.init():
-                    # run query on ea_list
+                    """run query on 'ea_list'
+                    on a side note: passing an object's method as an argument to hxtb
+                    is probably(?) a bad idea and I surely do not know how it works
+                    under the hood but it seems to work for the time being."""
+                    if not len(ea_list):
+                        idaapi.warning("%s: empty scope!" % SCRIPT_NAME)
+                        return
                     run_query(qo.run, ea_list, settings)
                     # call cleanup/exit function
                     qo.exit()
