@@ -49,14 +49,20 @@ Todo:
 # ----------------------------------------------------------------------------
 class query_object_t():
     """function queries (as used by hxtb-shell) inerhit from this class
-    and should override the following methods"""
+    and should override the below methods.
+    hxtb-shell will run them in the following order:
+    1) __init__()
+    2) init()
+    3) get_scope()
+    4) run()
+    5) exit()"""
     def __init__(self):
         pass
 
     def init(self):
-        """this is called after the object has been instantiated
-        it can be used to determine whether the query should be
-        run or not (return True or False)"""
+        """this is called after the object has been instantiated.
+        it can be used to determine whether run() should be
+        invoked or not (return True or False)"""
         return False
 
     def run(self, cfunc, citem):

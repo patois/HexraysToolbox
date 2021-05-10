@@ -64,6 +64,32 @@ return LambdaMatcher()""" % lexpr
         print(e)
     return qo
 
+
+def get_ealist(s, qo):
+    scope = s.scope
+    # scope = database
+    if scope == 0:
+        return list(idautils.Functions())
+    # scope = current function or xrefs to current item
+    elif scope == 1 or scope == 2:
+        screen_ea = idaapi.get_screen_ea()
+        # current function
+        if scope == 1:
+            return [screen_ea]
+        # xrefs to current item
+        else:
+            return get_func_xrefs(screen_ea)
+    # scope defined by query
+    elif scope == 3:
+        # and query_type is function
+        if s.query_type == 0:
+            return qo.get_scope()
+        elif s.query_type == 1:
+            return []
+    return []
+
+
+
 def get_func_xrefs(ea):
     ea_list = []
     for xea in idautils.XrefsTo(ea):
@@ -207,32 +233,17 @@ BUTTON CANCEL NONE
         settings = self._get_settings()
         qo = compile_code(settings)
         if qo:
-            scope = settings.scope
-            if scope == 0:
-                ea_list = list(idautils.Functions())
-            elif scope == 1 or scope == 2:
-                screen_ea = idaapi.get_screen_ea()
-                ea_list = []
-                if scope == 1:
-                    ea_list.append(screen_ea)
-                else:
-                    ea_list = get_func_xrefs(screen_ea)
-            elif scope == 3 and settings.query_type == 0:
-                ea_list = qo.get_scope()
-            else:
-                idaapi.warning("%s: invalid scope!" % SCRIPT_NAME)
-                return
-
-            if not len(ea_list):
-                idaapi.warning("%s: empty scope!" % SCRIPT_NAME)
-                return
             # call init() and check whether it is ok to run this query
             if qo.init():
-                """run query on 'ea_list'
-                on a side note: passing an object's method as an argument to hxtb
-                is probably(?) a bad idea and I surely do not know how it works
-                under the hood but it seems to work for the time being."""
-                run_query(qo.run, ea_list, settings)
+                ea_list = get_ealist(settings, qo)
+                if not len(ea_list):
+                    idaapi.warning("%s: empty scope!" % SCRIPT_NAME)
+                else:
+                    """run query on 'ea_list'
+                    on a side note: passing an object's method as an argument to hxtb
+                    is probably(?) a bad idea and I surely do not know how it works
+                    under the hood but it seems to work for the time being."""
+                    run_query(qo.run, ea_list, settings)
                 # call cleanup/exit function
                 qo.exit()
         return
