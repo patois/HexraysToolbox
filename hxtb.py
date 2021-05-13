@@ -8,7 +8,7 @@ import idc
 from ida_idaapi import __EA64__, BADADDR
 
 __author__ = "Dennis Elser @ https://github.com/patois"
-SCRIPT_NAME = "[hxtb]"
+SCRIPT_NAME = "hxtb"
 
 """
 Hexrays Toolbox - IDAPython plugin for finding code patterns using Hexrays
@@ -129,7 +129,7 @@ def find_item(ea, q, parents=False, flags=0):
         try:
             cfunc = hx.decompile(f, hf, flags)
         except Exception as e:
-            print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
+            print("[%s] %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
             print("\t (%s)" % e)
             return list()
 
@@ -162,8 +162,11 @@ def find_child_item(cfunc, i, q, parents=False):
         def process(self, i):
             """process cinsn_t and cexpr_t elements alike"""
 
-            if self.query(self.cfunc, i):
-                self.found.append(query_result_t(self.cfunc, i))
+            try:
+                if self.query(self.cfunc, i):
+                    self.found.append(query_result_t(self.cfunc, i))
+            except:
+                pass
             return 0
 
         def visit_insn(self, i):
@@ -198,7 +201,7 @@ def find_expr(ea, q, parents=False, flags=0):
         try:
             cfunc = hx.decompile(f, hf, flags)
         except Exception as e:
-            print("%s %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
+            print("[%s] %x: unable to decompile: '%s'" % (SCRIPT_NAME, ea, hf))
             print("\t (%s)" % e)
             return list()
 
@@ -230,9 +233,11 @@ def find_child_expr(cfunc, e, q, parents=False):
 
         def visit_expr(self, e):
             """process cexpr_t elements"""
-
-            if self.query(self.cfunc, e):
-                self.found.append(query_result_t(self.cfunc, e))
+            try:
+                if self.query(self.cfunc, e):
+                    self.found.append(query_result_t(self.cfunc, e))
+            except:
+                pass
             return 0
 
     if cfunc:

@@ -103,7 +103,7 @@ def get_func_xrefs(ea):
     return ea_list
 
 class QuerySettings():
-    def __init__(self, query="", query_qtype=0, ast_type=0, scope=0, help=""):
+    def __init__(self, query="", query_qtype=1, ast_type=0, scope=1, help="new query"):
         self.commit(query, query_qtype, ast_type, scope, help)
 
     def commit(self, query, query_qtype, ast_type, scope, help):
