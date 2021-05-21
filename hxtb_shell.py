@@ -64,7 +64,6 @@ return LambdaMatcher()""" % lexpr
         print(e)
     return qo
 
-
 def get_ealist(s, qo):
     scope = s.scope
     # scope = database
@@ -88,8 +87,6 @@ def get_ealist(s, qo):
             return []
     return []
 
-
-
 def get_func_xrefs(ea):
     ea_list = []
     for xea in idautils.XrefsTo(ea):
@@ -103,7 +100,7 @@ def get_func_xrefs(ea):
     return ea_list
 
 class QuerySettings():
-    def __init__(self, query="", query_qtype=1, ast_type=0, scope=1, help="new query"):
+    def __init__(self, query="", query_qtype=1, ast_type=1, scope=1, help="new query"):
         self.commit(query, query_qtype, ast_type, scope, help)
 
     def commit(self, query, query_qtype, ast_type, scope, help):
@@ -141,7 +138,7 @@ BUTTON YES NONE
 BUTTON NO NONE
 BUTTON CANCEL NONE
 %s
-<##New:{btn_new}><##Load:{btn_load}><##Save as...:{btn_save}>
+<##~N~ew:{btn_new}><##~O~pen:{btn_load}><##~S~ave as...:{btn_save}>
 
 <:{str_help}>
 <Query (function or expression)\::{mstr_query}>
@@ -157,15 +154,15 @@ BUTTON CANCEL NONE
 <Xrefs to current item:{rScopeXrefItem}>
 <Defined by query:{rScopeQuery}>{rad_qscope}>     
 
-<##Run Query:{btn_runq}>
+<##~R~un:{btn_runq}>
 """ % SCRIPT_NAME
         self._qs = QuerySettings()
         s = self._get_settings()
 
         t = idaapi.textctrl_info_t()
         controls = {"mstr_query": idaapi.Form.MultiLineTextControl(text=s.query,
-                        flags=t.TXTF_AUTOINDENT | t.TXTF_ACCEPTTABS | t.TXTF_FIXEDFONT,
-                        tabsize=4,
+                        flags=t.TXTF_AUTOINDENT | t.TXTF_ACCEPTTABS | t.TXTF_FIXEDFONT | t.TXTF_MODIFIED,
+                        tabsize=2,
                         width=90,
                         swidth=90),
                     "str_help": idaapi.Form.StringInput(swidth=90, value=s.help),
