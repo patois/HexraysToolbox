@@ -11,6 +11,11 @@ from types import FunctionType
 __author__ = "@pat0is"
 SCRIPT_NAME = "hxtb-shell"
 
+try:
+    INSTANCE
+except:
+    INSTANCE = None
+
 def run_query(qf, ea_list, qs):
     subtitle = qs.help
     title = subtitle if len(subtitle) < 80 else "%s..." % subtitle[:77]
@@ -138,6 +143,7 @@ BUTTON YES NONE
 BUTTON NO NONE
 BUTTON CANCEL NONE
 %s
+{FormChangeCb}
 <##~N~ew:{btn_new}><##~O~pen:{btn_load}><##~S~ave as...:{btn_save}>
 
 <:{str_help}>
@@ -158,28 +164,36 @@ BUTTON CANCEL NONE
 """ % SCRIPT_NAME
         self._qs = QuerySettings()
         s = self._get_settings()
-
+        F = idaapi.Form
         t = idaapi.textctrl_info_t()
-        controls = {"mstr_query": idaapi.Form.MultiLineTextControl(text=s.query,
+        controls = {"mstr_query": F.MultiLineTextControl(text=s.query,
                         flags=t.TXTF_AUTOINDENT | t.TXTF_ACCEPTTABS | t.TXTF_FIXEDFONT | t.TXTF_MODIFIED,
                         tabsize=2,
                         width=90,
                         swidth=90),
-                    "str_help": idaapi.Form.StringInput(swidth=90, value=s.help),
-                    "rad_qscope": idaapi.Form.RadGroupControl(
+                    "str_help": F.StringInput(swidth=90, value=s.help),
+                    "rad_qscope": F.RadGroupControl(
                         ("rScopeIDB", "rScopeCurFunc", "rScopeXrefItem", "rScopeQuery"), value=s.scope),
-                    "rad_qtype": idaapi.Form.RadGroupControl(("rOptionFunction", "rOptionExpression"), value=s.query_type),
-                    "rad_ast_type": idaapi.Form.RadGroupControl(("rASTExpr", "rASTStmt"), value=s.ast_type),
-                    "btn_load": idaapi.Form.ButtonInput(self.OnButtonPress, code=0),
-                    "btn_save": idaapi.Form.ButtonInput(self.OnButtonPress, code=1),
-                    "btn_runq": idaapi.Form.ButtonInput(self.OnButtonPress, code=2),
-                    "btn_new": idaapi.Form.ButtonInput(self.OnButtonPress, code=3)}
-        idaapi.Form.__init__(self, form, controls)
+                    "rad_qtype": F.RadGroupControl(("rOptionFunction", "rOptionExpression"), value=s.query_type),
+                    "rad_ast_type": F.RadGroupControl(("rASTExpr", "rASTStmt"), value=s.ast_type),
+                    "btn_load": F.ButtonInput(self.OnButtonPress, code=0),
+                    "btn_save": F.ButtonInput(self.OnButtonPress, code=1),
+                    "btn_runq": F.ButtonInput(self.OnButtonPress, code=2),
+                    "btn_new": F.ButtonInput(self.OnButtonPress, code=3),
+                    'FormChangeCb': F.FormChangeCb(self.OnFormChange)}
+        F.__init__(self, form, controls)
+
+    def OnFormChange(self, fid):
+        if fid == -1: # form is intialized
+            self._apply_settings_to_ui(self._get_settings())
+        if fid == -5: # close form? (undocumented?)
+            self._commit_settings()
+        return 1
 
     def _get_settings(self):
         return self._qs
 
-    def _ui_apply_settings(self, settings):
+    def _apply_settings_to_ui(self, settings):
         tc = self.GetControlValue(self.mstr_query)
         tc.text = settings.query
         self.SetControlValue(self.mstr_query, tc)
@@ -206,7 +220,7 @@ BUTTON CANCEL NONE
             if settings.version < 1.0:
                 idaapi.warning("Version not supported")
                 return
-            self._ui_apply_settings(settings)
+            self._apply_settings_to_ui(settings)
         else:
             idaapi.warning("Could not load file.\n\n%s" % e)
             return
@@ -247,7 +261,7 @@ BUTTON CANCEL NONE
 
     def _handle_btn_new(self):
         # apply empty settings
-        self._ui_apply_settings(QuerySettings())
+        self._apply_settings_to_ui(QuerySettings())
         return
 
     def OnButtonPress(self, code=0):
@@ -266,16 +280,15 @@ BUTTON CANCEL NONE
         else:    
             idaapi.warning("wtf?")
 
-    INSTANCE = None
-
     @staticmethod
     def open():
-        if QueryForm.INSTANCE is None:
+        global INSTANCE
+        if INSTANCE is None:
             form = QueryForm()
             form.modal = False
             form, _ = form.Compile()
-            QueryForm.INSTANCE = form
-        return QueryForm.INSTANCE.Open()
+            INSTANCE = form
+        return INSTANCE.Open()
 
 if __name__ == "__main__":
-    QueryForm().open()
+    QueryForm.open()
