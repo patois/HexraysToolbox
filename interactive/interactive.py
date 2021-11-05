@@ -134,7 +134,7 @@ def menu():
     return
 
 if __name__ == "__main__":
-    from hr_toolbox import query as q
-    from hr_toolbox import query_db as qdb
-    from hr_toolbox import ic_t as lst
+    from hxtb import query as q
+    from hxtb import query_db as qdb
+    from hxtb import ic_t as lst
     menu()
