@@ -1,25 +1,45 @@
 # Hexrays Toolbox
 
-Hexrays Toolbox is a script for the Hexrays Decompiler which
-can be used to find code patterns within decompiled code:
+Hexrays Toolbox (hxtb) is a powerful script for the Hexrays Decompiler which can be used to find code patterns in decompiled code. Some of its use cases are described below.
+
+## Use Cases
 
 - scan binary files for known and unknown vulnerabilities
-- locate code patterns from previously reverse engineered executables
-  within newly decompiled code
+- locate code patterns from previously reverse engineered executables in newly decompiled code
 - malware variant analysis
 - find code similarities across several binaries
-- find code patterns from one architecture within executable code of another
-  architecture
+- find code patterns from one architecture in executable code of another architecture
 - many more, limited (almost) only by the queries you'll come up with ;)
 
-The query shown below can be used to detect CVE-2019-3568 in libwhatsapp.so.
-Find the example script ![here](./examples/)
+The query shown below shows an example of how a particular code pattern can be identified that was responsible for a remote code execution security vulnerability in WHatsApp in 2019 (CVE-2019-3568, libwhatsapp.so). Find the example script ![here](./examples/).
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
 
-Loading hxtb.py with IDA (alt-f7) will make
-available the "find_expr()" and "find_item()" functions
-to the IDAPython CLI and the script interpreter (shift-f2).
+## Usage
+
+There are several ways of using Hexrays Toolbox, each with a varying degree of flexibility.
+
+- run queries on behalft of [hxtb_shell](#hxtb-shell), an interactive GUI
+- custom [scripting](#Scripting)
+- ```interactive.py```, a script that adds [convenience functions](./interactive/interactive.py) to be used with the IDA command line interface
+- ```automation.py```, a script that processes and runs hxtb queries on a given set of files in [batch mode](./automation/batch.py)
+
+### hxtb-shell
+Executing the included ```hxtb_shell.py``` script from within IDA opens a GUI window that can be used to develop and run hxtb queries with. hxtb-shell also accepts Python expressions created by the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin's context viewer that can be directly copy-pasted.
+
+![HRDevHelper context viewer](https://github.com/patois/HRDevHelper/blob/master/rsrc/hrdevctx.png?raw=true)
+
+___
+
+Below screenshot shows hxtb-shell with an example query loaded that creates and shows a list of strings referenced by the current function. 
+
+![hxtb shell](./rsrc/hxtbshell.png?raw=true)
+
+Further queries in the hxtb-shell format can be found in the ```hxtbshell_queries``` folder included with hxtb.
+
+### Scripting
+
+Loading ```hxtb.py``` with IDA (alt-f7) makes functions such as ```find_expr()``` and ```find_item()``` available to both the IDAPython CLI and the script interpreter (shift-f2). Among others, these functions can be used to run queries on the currently loaded ida database. Please check out some of the examples shown (below)[Examples].
 
 ```
     find_item(ea, q)
@@ -54,7 +74,7 @@ to the IDAPython CLI and the script interpreter (shift-f2).
 ```
 Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin and the [IDAPyHelper](https://github.com/patois/IDAPyHelper) script which may assist in writing respective queries.
 
-## Examples:
+## Examples
 
 ### get list of expressions that compare anything to zero ("x == 0")
 ```
