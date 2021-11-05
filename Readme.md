@@ -39,7 +39,7 @@ Further queries in the hxtb-shell format can be found in the ```hxtbshell_querie
 
 ### Scripting
 
-Loading ```hxtb.py``` with IDA (alt-f7) makes functions such as ```find_expr()``` and ```find_item()``` available to both the IDAPython CLI and the script interpreter (shift-f2). Among others, these functions can be used to run queries on the currently loaded ida database. Please check out some of the examples shown (below)[Examples].
+Loading ```hxtb.py``` with IDA (alt-f7) makes functions such as ```find_expr()``` and ```find_item()``` available to both the IDAPython CLI and the script interpreter (shift-f2). Among others, these functions can be used to run queries on the currently loaded ida database. Please check out some of the examples shown [below](#Examples).
 
 ```
     find_item(ea, q)
