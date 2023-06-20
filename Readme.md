@@ -1,45 +1,49 @@
-# Hexrays Toolbox
+# HexRays Toolbox
 
-Hexrays Toolbox (hxtb) is a powerful script for the Hexrays Decompiler which can be used to find code patterns in decompiled code. Some of its use cases are described below.
+HexRays Toolbox (hxtb) is a powerful set of IDAPython scripts that can be used to find and locate code patterns in binaries, independent from their underlying processor architecture.
 
 ## Use Cases
 
-- scan binary files for known and unknown vulnerabilities
+- scan binary files for vulnerabilities and variants
 - locate code patterns from previously reverse engineered executables in newly decompiled code
 - malware variant analysis
-- find code similarities across several binaries
-- find code patterns from one architecture in executable code of another architecture
-- many more, limited (almost) only by the queries you'll come up with ;)
+- find code similarities across several binaries (i.e. for proving "code theft", license violations, ...)
+- find code patterns from binaries compiled for architecture A in binaries compiled for architecture B
+- probably a lot more...
 
-The query shown below shows an example of how a particular code pattern can be identified that was responsible for a remote code execution security vulnerability in WHatsApp in 2019 (CVE-2019-3568, libwhatsapp.so). Find the example script ![here](./examples/).
+The query illustrated by the animation below is an example for how a vulnerability that affected WhatsApp for Android (CVE-2019-3568, libwhatsapp.so) can be located using HexRays Toolbox. This is done by formulating a desired code pattern that is to be located using an IDAPython lambda function. Find the example script ![here](./examples/).
 
 ![toolbox animated gif](./rsrc/toolbox.gif?raw=true)
+
+## Requirements
+
+A valid IDA license and a valid HexRays decompiler license per target architecture is required. 
 
 ## Usage
 
 There are several ways of using Hexrays Toolbox, each with a varying degree of flexibility.
 
-- run queries on behalft of [hxtb_shell](#hxtb-shell), an interactive GUI
-- custom [scripting](#Scripting)
+- run queries on behalf of [hxtb_shell](#hxtb-shell), an interactive GUI
+- custom IDAPython [scripting](#Scripting)
 - ```interactive.py```, a script that adds [convenience functions](./interactive/interactive.py) to be used with the IDA command line interface
 - ```automation.py```, a script that processes and runs hxtb queries on a given set of files in [batch mode](./automation/batch.py)
 
 ### hxtb-shell
-Executing the included ```hxtb_shell.py``` script from within IDA opens a GUI window that can be used to develop and run hxtb queries with. hxtb-shell also accepts Python expressions created by the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin's context viewer that can be directly copy-pasted.
+Executing the included ```hxtb_shell.py``` script from within IDA opens a GUI window that can be used to develop, load and run hxtb queries. The screenshot below shows what a query loaded with hxtb-shell may look like.
+
+![hxtb shell](./rsrc/hxtbshell.png?raw=true)
+
+hxtb-shell also accepts Python expressions that are created by the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin's context viewer. They can be copied from it and directly pasted into the hxtb-shell GUI.
 
 ![HRDevHelper context viewer](https://github.com/patois/HRDevHelper/blob/master/rsrc/hrdevctx.png?raw=true)
 
 ___
 
-Below screenshot shows hxtb-shell with an example query loaded that creates and shows a list of strings referenced by the current function. 
-
-![hxtb shell](./rsrc/hxtbshell.png?raw=true)
-
-Further queries in the hxtb-shell format can be found in the ```hxtbshell_queries``` folder included with hxtb.
+Further example queries that can be loaded with hxtb-shell can be found in the ```hxtbshell_queries``` sub-folder included with HexRays Toolbox.
 
 ### Scripting
 
-Loading ```hxtb.py``` with IDA (alt-f7) makes functions such as ```find_expr()``` and ```find_item()``` available to both the IDAPython CLI and the script interpreter (shift-f2). Among others, these functions can be used to run queries on the currently loaded ida database. Please check out some of the examples shown [below](#Examples).
+Loading ```hxtb.py``` with IDA (Alt-F7) makes functions such as ```find_expr()``` and ```find_item()``` available to both the IDAPython CLI and the script interpreter (Shift-F2). Among others, these functions can be used to run queries on the currently loaded IDA database. Please check out some of the examples shown [below](#Examples).
 
 ```
     find_item(ea, q)
@@ -72,11 +76,10 @@ Loading ```hxtb.py``` with IDA (alt-f7) makes functions such as ```find_expr()``
     Please find the cfunc_t, citem_t, cinsn_t and cexpr_t structures
     within hexrays.hpp for further help and details.
 ```
-Please also check out the [HRDevHelper](https://github.com/patois/HRDevHelper) plugin and the [IDAPyHelper](https://github.com/patois/IDAPyHelper) script which may assist in writing respective queries.
 
 ## Examples
 
-### get list of expressions that compare anything to zero ("x == 0")
+### List expressions that compare anything to zero ("x == 0")
 ```
          cot_eq
          /   \
@@ -91,7 +94,7 @@ r = find_expr(here(), query)
 for e in r:
     print(e)
 ```
-### get list of function calls
+### List (direct) function calls
 ```
         cot_call
          / 
@@ -107,7 +110,7 @@ for e in r:
     print(e)
 ```
 ![list of calls ](./rsrc/calls.png?raw=true)
-### print list of memcpy calls where "dst" argument is on stack
+### List memcpy calls where "dst" argument is on stack
 ```
         cot_call --- arg1 is cot_var
          /           arg1 is on stack
@@ -129,7 +132,7 @@ for ea in Functions():
 for e in r:
     print(e)
 ```
-### get list of calls to sprintf(str, fmt, ...) where fmt contains "%s"
+### List calls to sprintf(str, fmt, ...) where fmt contains "%s"
 ```
         cot_call --- arg2 ('fmt') contains '%s'
          /
@@ -152,34 +155,34 @@ for ea in Functions():
 for e in r:
     print(e)
 ```
-### get list of signed operators, display result in chooser
+### Show all instructions using signed operators in a list view
 ``` python
 from idaapi import *
 from hxtb import ic_t
 query = lambda cfunc, e: (e.op in
-            [hr.cot_asgsshr, hr.cot_asgsdiv,
-            hr.cot_asgsmod, hr.cot_sge,
-            hr.cot_sle, hr.cot_sgt,
-            hr.cot_slt, hr.cot_sshr,
-            hr.cot_sdiv, hr.cot_smod])
+            [cot_asgsshr, cot_asgsdiv,
+            cot_asgsmod, cot_sge,
+            cot_sle, cot_sgt,
+            cot_slt, cot_sshr,
+            cot_sdiv, cot_smod])
 ic_t(query)
 ```
 ![list of signed operators](./rsrc/signed_ops.png?raw=true)
-### get list of "if" statements, display result in chooser
+### Show all "if" statements in a list view
 ``` python
 from idaapi import *
 from hxtb import ic_t
 ic_t(lambda cf, i: i.op is cit_if)
 ```
 ![list of if statements](./rsrc/if_stmt.png?raw=true)
-### get list of all loop statements in db, display result in chooser
+### Find all loop statements within current db, display result in a list view
 ``` python
 from idaapi import *
 from hxtb import ic_t, query_db
 ic_t(query_db(lambda cf,i: is_loop(i.op)))
 ```
 ![list of loops](./rsrc/loops.png?raw=true)
-### get list of loop constructs containing copy operations
+### Show potential memory copy operations in a list view
 ``` python
 from hxtb import ic_t, query_db, find_child_expr
 from ida_hexrays import *
